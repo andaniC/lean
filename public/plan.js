@@ -20,7 +20,8 @@ export function computePlan(p) {
   protein = Math.min(protein, Math.round((calories * 0.35) / 4));
   const fat = Math.round((calories * 0.27) / 9);
   const carbs = Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4));
-  return { calories, protein, carbs, fat, tdee: Math.round(tdee) };
+  const water = Math.min(4000, Math.max(1500, Math.round((p.weight * 33) / 250) * 250));
+  return { calories, protein, carbs, fat, water, tdee: Math.round(tdee) };
 }
 
 export function goalDate(p, from = new Date()) {

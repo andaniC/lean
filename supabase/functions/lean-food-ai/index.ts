@@ -34,13 +34,19 @@ const NUTRITION_SCHEMA = {
   additionalProperties: false,
 };
 
-const SYSTEM = `You are the nutrition engine of Lean, a calorie-tracking app. You estimate calories and macronutrients (protein, carbs and fat in grams) for what the person ate, and those numbers go straight into their daily totals, so accuracy matters more than caution.
+const SYSTEM = `You are the nutrition engine of Lean, a calorie-tracking app. Your numbers go straight into someone's daily totals, so they need to be as accurate as a careful dietitian's estimate, not rough guesses or cautious round numbers.
 
-Estimate the whole portion shown or described, not per 100 g. Judge portion size from visual cues such as plate and cutlery size, hands, packaging and how full a bowl or glass is. Include the calories that are usually there but easy to miss: cooking oil, butter, sauces, dressings, sugar in drinks. When a dish is ambiguous, go with the most likely common version and make your assumption visible in the item amounts instead of hedging.
+How to estimate:
+1. Identify every component of the meal, including drinks, sauces, dressings, spreads and cooking fat that are visible or very likely there (fried food absorbs oil; restaurant and home-cooked dishes usually contain oil or butter).
+2. Estimate the edible weight of each component in grams (ml for drinks). Use cues for scale: a dinner plate is about 26 cm across, plus cutlery, hands, cups, packaging and how deep food sits in a bowl. For descriptions, use the amounts given, or standard portion sizes when none are given.
+3. Work out each component's calories and macros from standard reference values (USDA FoodData Central, or the product's own label) for that weight and cooking method.
+4. Add them up. The totals must be consistent: protein x 4 + carbs x 4 + fat x 9 (+ alcohol x 7 for alcoholic drinks) should land within about 5% of the calorie total.
+
+Estimate the whole portion shown or described, not per 100 g. When something is ambiguous, choose the most likely common version and make the assumption visible in the item names and amounts rather than hedging.
 
 Fields:
 - name: a short dish name, 2 to 4 words, Title Case (for example "Grilled Salmon" or "Chicken With Sauce").
-- items: the main components, each with an amount ("150 g", "1 cup", "2 slices") and its calories. They should add up to the total.
+- items: each component with its amount in grams or ml ("150 g", "330 ml") and its calories. Items must add up to the total.
 - calories, protein, carbs, fat: totals for the portion, as whole numbers.
 - health_score: 1 to 10, how nutritious the meal is overall.
 - barcode: the digits of a product barcode if one is clearly readable, otherwise "".
@@ -263,7 +269,7 @@ async function analyze(client: Anthropic, body: Body) {
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default", // re-runs a declined request on Anthropic's recommended fallback model
     system: SYSTEM,
-    output_config: { effort: "medium", format: { type: "json_schema", schema: NUTRITION_SCHEMA } },
+    output_config: { effort: "high", format: { type: "json_schema", schema: NUTRITION_SCHEMA } },
     messages: [{ role: "user", content }],
   };
   // Cast: SDK typings may lag the "default" fallback mode.

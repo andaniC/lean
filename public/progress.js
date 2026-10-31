@@ -23,10 +23,10 @@ export function renderProgress(el, { onLogWeight }) {
         <div class="p-label">My weight</div>
         <div class="p-big">${weight}<small> kg</small></div>
         <div class="p-sub">${p.goal === "maintain" ? "Goal: maintain" : `Goal ${target} kg`}</div>
-        <div class="bar"><i style="width:${Math.round(pct * 100)}%"></i></div>
+        <div class="bar"><i style="width:${Math.round(pct * 100)}%;background:var(--protein)"></i></div>
         <button class="btn press" data-log-weight>Log weight</button>
       </div>
-      <div class="p-card">
+      <div class="p-card streak-card">
         <div class="p-label">Day streak</div>
         <div class="streak-big"><span class="ic">${icons.flame}</span><span class="p-big">${st}</span></div>
         <div class="p-sub">${loggedDays()} day${loggedDays() === 1 ? "" : "s"} logged in total</div>
@@ -104,12 +104,12 @@ function weightChart(p) {
   const last = pts[pts.length - 1];
   return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weight over time">
-      <defs><linearGradient id="wfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#111" stop-opacity=".12"/><stop offset="1" stop-color="#111" stop-opacity="0"/></linearGradient></defs>
+      <defs><linearGradient id="wfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2f9a63" stop-opacity=".22"/><stop offset="1" stop-color="#2f9a63" stop-opacity="0"/></linearGradient></defs>
       ${ticks.map((v) => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="#e4e4e6"/><text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end">${round(v)}</text>`).join("")}
       ${goalLine}
       <path d="${area}" fill="url(#wfill)"/>
-      <path d="${path}" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${x(last.t)}" cy="${y(last.kg)}" r="4.5" fill="#111" stroke="#fff" stroke-width="2"/>
+      <path d="${path}" fill="none" stroke="#2f9a63" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${x(last.t)}" cy="${y(last.kg)}" r="4.5" fill="#2f9a63" stroke="#fff" stroke-width="2"/>
       <text x="${padL}" y="${H - 4}">${fmt(t0)}</text>
       <text x="${W - padR}" y="${H - 4}" text-anchor="end">${fmt(last.t)}</text>
     </svg>`;
@@ -150,7 +150,7 @@ function calorieChart(goal) {
           const v = vals[i];
           const cx = slot * i + slot / 2;
           const h = Math.max(0, H - padB - y(v));
-          const fill = v > goal ? "#ef6c63" : "#111";
+          const fill = v > goal ? "#ef6c63" : "#ff7a1a";
           const bar = v > 0 ? `<rect x="${cx - bw / 2}" y="${y(v)}" width="${bw}" height="${h}" rx="7" fill="${fill}"/>` : `<rect x="${cx - bw / 2}" y="${H - padB - 4}" width="${bw}" height="4" rx="2" fill="#e2e2e5"/>`;
           return `${bar}<text x="${cx}" y="${H - 5}" text-anchor="middle" style="${k === today ? "fill:#111;font-weight:700" : ""}">${labels[i]}</text>`;
         })

@@ -35,31 +35,52 @@
 
         <div class="week" id="week"></div>
 
-        <button class="card cal-card press" id="cal-card">
-          <div>
-            <div class="cal-num" id="cal-num">0</div>
-            <div class="cal-label" id="cal-label">Calories left</div>
-          </div>
-          <div class="ring ring-lg" id="cal-ring"></div>
-        </button>
+        <div class="pager" id="pager">
+          <section class="page" aria-label="Calories and macros">
+            <button class="card cal-card press" id="cal-card">
+              <div>
+                <div class="cal-num" id="cal-num">0</div>
+                <div class="cal-label" id="cal-label">Calories left</div>
+              </div>
+              <div class="ring ring-lg" id="cal-ring"></div>
+            </button>
 
-        <div class="macros">
-          <div class="card macro">
-            <div class="macro-num" id="protein-num">0g</div>
-            <div class="macro-label" id="protein-label">Protein left</div>
-            <div class="ring ring-sm protein" id="protein-ring"></div>
-          </div>
-          <div class="card macro">
-            <div class="macro-num" id="carbs-num">0g</div>
-            <div class="macro-label" id="carbs-label">Carbs left</div>
-            <div class="ring ring-sm carbs" id="carbs-ring"></div>
-          </div>
-          <div class="card macro">
-            <div class="macro-num" id="fat-num">0g</div>
-            <div class="macro-label" id="fat-label">Fat left</div>
-            <div class="ring ring-sm fat" id="fat-ring"></div>
-          </div>
+            <div class="macros">
+              <div class="card macro">
+                <div class="macro-num" id="protein-num">0g</div>
+                <div class="macro-label" id="protein-label">Protein left</div>
+                <div class="ring ring-sm protein" id="protein-ring"></div>
+              </div>
+              <div class="card macro">
+                <div class="macro-num" id="carbs-num">0g</div>
+                <div class="macro-label" id="carbs-label">Carbs left</div>
+                <div class="ring ring-sm carbs" id="carbs-ring"></div>
+              </div>
+              <div class="card macro">
+                <div class="macro-num" id="fat-num">0g</div>
+                <div class="macro-label" id="fat-label">Fat left</div>
+                <div class="ring ring-sm fat" id="fat-ring"></div>
+              </div>
+            </div>
+          </section>
+          <section class="page" aria-label="Water">
+            <div class="card water-card">
+              <div class="water-head">
+                <div>
+                  <div class="cal-num"><span id="water-num">0</span><small> ml</small></div>
+                  <div class="cal-label" id="water-label">Water of 2,000 ml</div>
+                </div>
+                <div class="ring ring-lg water-ring" id="water-ring"></div>
+              </div>
+              <div class="glasses" id="glasses"></div>
+              <div class="water-btns">
+                <button class="water-btn press" id="water-minus" aria-label="Remove 250 ml" data-icon="minus"></button>
+                <button class="water-btn add press" id="water-plus"><span data-icon="plus"></span>250 ml</button>
+              </div>
+            </div>
+          </section>
         </div>
+        <div class="dots" id="dots"><button class="on" aria-label="Calories"></button><button aria-label="Water"></button></div>
 
         <button class="banner press" id="code-banner" hidden>
           <span data-icon="key"></span>
@@ -93,7 +114,7 @@
 
     <!-- Camera -->
     <div class="camera" id="camera" data-mode="scan" hidden>
-      <video id="cam-video" playsinline muted autoplay></video>
+      <video id="cam-video" playsinline webkit-playsinline muted autoplay></video>
       <div class="cam-shade"></div>
       <div class="cam-fallback" id="cam-fallback" hidden>
         <h3>Camera unavailable</h3>

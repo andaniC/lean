@@ -1,5 +1,5 @@
 // Offline support: app shell is served from cache and refreshed in the background.
-const CACHE = "lean-v1";
+const CACHE = "lean-v3";
 const SHELL = [
   "./",
   "index.html",
@@ -60,17 +60,18 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // App files: stale-while-revalidate.
+  // App files: network first (fresh after every deploy), cache when offline or slow.
   event.respondWith(
     caches.open(CACHE).then(async (c) => {
-      const hit = await c.match(req, { ignoreSearch: req.mode === "navigate" });
-      const refresh = fetch(req)
-        .then((res) => {
-          if (res.ok) c.put(req, res.clone());
-          return res;
-        })
-        .catch(() => hit || (req.mode === "navigate" ? c.match("index.html") : undefined));
-      return hit || refresh;
+      const cached = () =>
+        c.match(req, { ignoreSearch: true }).then((hit) => hit || (req.mode === "navigate" ? c.match("index.html") : undefined));
+      const network = fetch(req).then((res) => {
+        if (res.ok) c.put(req, res.clone());
+        return res;
+      });
+      const first = await Promise.race([network.catch(() => null), new Promise((r) => setTimeout(r, 4000, null))]);
+      if (first) return first;
+      return (await cached()) || network.catch(() => Response.error());
     })
   );
 });

@@ -1,15 +1,37 @@
 // Camera stream + image helpers.
 
+const ATTEMPTS = [
+  { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+  { facingMode: { ideal: "environment" } },
+  true,
+];
+
 export async function startCamera(video) {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera not supported in this browser.");
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1440 } },
-  });
+  let stream;
+  let lastErr;
+  for (const constraints of ATTEMPTS) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
+      break;
+    } catch (err) {
+      lastErr = err;
+      // A refusal won't change with different constraints.
+      if (err?.name === "NotAllowedError" || err?.name === "SecurityError") throw err;
+    }
+  }
+  if (!stream) throw lastErr;
+  // Keep the preview inside the app (iOS otherwise may open a fullscreen player).
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.muted = true;
   video.srcObject = stream;
+  video.onloadedmetadata = () => video.play().catch(() => {});
   await video.play().catch(() => {});
   return stream;
 }
+
+export const streamLive = (stream) => !!stream && stream.getVideoTracks().some((t) => t.readyState === "live");
 
 export function stopCamera(stream, video) {
   stream?.getTracks().forEach((t) => t.stop());

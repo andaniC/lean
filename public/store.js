@@ -1,6 +1,6 @@
 // App state, persistence and derived numbers. Views subscribe with onChange().
 import * as db from "./db.js";
-import { todayKey, keyOf, addDays, dateOf } from "./util.js";
+import { todayKey, keyOf, addDays, dateOf, clamp } from "./util.js";
 
 const SETTINGS_KEY = "lean.settings.v1";
 
@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS = {
     startWeight: 70,
     startDate: null,
   },
-  goals: { calories: 2000, protein: 120, carbs: 220, fat: 65 },
+  goals: { calories: 2000, protein: 120, carbs: 220, fat: 65, water: 2000 },
 };
 
 function readSettings() {
@@ -43,6 +43,7 @@ export const state = {
   settings: readSettings(),
   entries: [],
   weights: [],
+  water: {},
   selected: todayKey(),
   tab: "home",
   calView: "left",
@@ -70,7 +71,8 @@ export async function loadAll() {
   try {
     navigator.storage?.persist?.();
   } catch {}
-  const [entries, weights] = await Promise.all([db.getAll("entries"), db.getAll("weights")]);
+  const [entries, weights, water] = await Promise.all([db.getAll("entries"), db.getAll("weights"), db.getAll("water")]);
+  state.water = Object.fromEntries(water.map((w) => [w.date, w.ml]));
   // Requests can't survive an app restart: surface interrupted scans as retryable errors.
   for (const e of entries) {
     if (e.status === "pending") {
@@ -116,9 +118,14 @@ export async function deleteWeight(id) {
   await db.remove("weights", id);
 }
 
-export async function replaceAll({ entries = [], weights = [] }) {
-  await Promise.all([db.clear("entries"), db.clear("weights")]);
-  await Promise.all([db.putMany("entries", entries), db.putMany("weights", weights)]);
+export async function replaceAll({ entries = [], weights = [], water = {} }) {
+  await Promise.all([db.clear("entries"), db.clear("weights"), db.clear("water")]);
+  await Promise.all([
+    db.putMany("entries", entries),
+    db.putMany("weights", weights),
+    db.putMany("water", Object.entries(water).map(([date, ml]) => ({ date, ml }))),
+  ]);
+  state.water = { ...water };
   state.entries = entries;
   state.weights = weights.sort((a, b) => a.date.localeCompare(b.date));
   emit();
@@ -167,3 +174,12 @@ export const currentWeight = () => {
 export const loggedDays = () => new Set(state.entries.filter((e) => e.status === "done").map((e) => e.date)).size;
 
 export const isFuture = (key) => dateOf(key) > dateOf(todayKey());
+
+export const waterFor = (key) => state.water[key] ?? 0;
+
+export async function setWater(key, ml) {
+  const v = clamp(Math.round(ml), 0, 10000);
+  state.water[key] = v;
+  emit();
+  await db.put("water", { date: key, ml: v });
+}

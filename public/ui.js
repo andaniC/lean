@@ -3,6 +3,14 @@ import { icons } from "./icons.js";
 import { clamp, haptic } from "./util.js";
 
 export const $ = (sel, root = document) => root.querySelector(sel);
+
+const measureCtx = document.createElement("canvas").getContext("2d");
+/** Sizes a text/number input to exactly fit its value, so a unit after it sits snugly. */
+export function fitInput(input) {
+  const cs = getComputedStyle(input);
+  measureCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  input.style.width = `${Math.ceil(measureCtx.measureText(input.value || "0").width) + 2}px`;
+}
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 export function hydrateIcons(root = document) {
@@ -61,9 +69,20 @@ export function hideToast() {
   $("#toast").classList.remove("show");
 }
 
-export function toast(message, ms = 2600) {
+/** Shows a short message; `action` ({ label, onClick }) adds a button such as Undo. */
+export function toast(message, ms = 2600, action) {
   const el = $("#toast");
   el.textContent = message;
+  el.classList.toggle("has-action", !!action);
+  if (action) {
+    const btn = document.createElement("button");
+    btn.textContent = action.label;
+    btn.addEventListener("click", () => {
+      hideToast();
+      action.onClick();
+    });
+    el.append(btn);
+  }
   el.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove("show"), ms);

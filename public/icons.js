@@ -48,6 +48,11 @@ export const icons = {
   fork: s(`<path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M17 21V3c-2 1-3 3.5-3 6.5V13h3"/>`),
   key: s(`<circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2"/>`),
   retry: s(`<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4.5 4v4.5H9"/>`),
+  drop: f(`<path d="M12 2.6c-.3 0-.6.2-.8.5C9.3 5.8 5.4 11 5.4 14.8a6.6 6.6 0 0 0 13.2 0c0-3.8-3.9-9-5.8-11.7-.2-.3-.5-.5-.8-.5z"/>`),
+  glass: s(`<path d="M5.5 3.5h13l-1.6 16.1a1.6 1.6 0 0 1-1.6 1.4H8.7a1.6 1.6 0 0 1-1.6-1.4z"/>`, `stroke-width="1.8"`),
+  glassFull:
+    `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 9.5h11.4l-1.2 10.1a1.6 1.6 0 0 1-1.6 1.4H9.1a1.6 1.6 0 0 1-1.6-1.4z" fill="currentColor"/>` +
+    `<path d="M5.5 3.5h13l-1.6 16.1a1.6 1.6 0 0 1-1.6 1.4H8.7a1.6 1.6 0 0 1-1.6-1.4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
   search: s(`<circle cx="10.8" cy="10.8" r="6.3"/><path d="M20 20l-4.6-4.6"/>`, `stroke-width="2.3"`),
   share: s(`<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H18"/>`),
   wand: s(`<path d="M4 20 15 9M13.5 4.5v2M18.5 8.5h2M17 4.8l-1.4 1.4M9.5 4.5v2M8.5 5.5h2M19.5 13.5v2M18.5 14.5h2"/>`),
