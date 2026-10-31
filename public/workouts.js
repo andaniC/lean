@@ -5,6 +5,7 @@ import { GLUTE_EXERCISES } from "./exercise-data.js";
 import { state, saveWorkout, deleteWorkout, workoutsFor, burnedFor, currentWeight, emit } from "./store.js";
 import { openSquatCounter, preloadTracker } from "./squats.js";
 import { readSession, startSession, openSessionDetail, lastSetsFor } from "./training.js";
+import { openDemo } from "./demo.js";
 import { esc, round, round1, num, uid, todayKey, dateOf, clock, haptic } from "./util.js";
 
 export const gifUrl = (id) => `https://static.exercisedb.dev/media/${id}.gif`;
@@ -358,9 +359,14 @@ function openLibrary({ onPick } = {}) {
       const results = $("[data-results]", sheet);
       const choose = (ex) => {
         if (!onPick) return openExerciseSheet(ex);
-        close();
-        haptic(10);
-        onPick(ex);
+        // Preview the movement first, then add it.
+        openDemo(ex, {
+          onAdd: () => {
+            close();
+            haptic(10);
+            onPick(ex);
+          },
+        });
       };
       browse.addEventListener("click", (e) => {
         const b = e.target.closest("[data-ex]");

@@ -4076,3 +4076,49 @@ input[type="number"]::-webkit-inner-spin-button {
   letter-spacing: 0.02em;
   vertical-align: middle;
 }
+
+.demo-gif {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.demo-gif img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.yt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  margin-top: 12px;
+  border-radius: 25px;
+  background: #fdecea;
+  color: #d4251a;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.yt-btn .ic {
+  font-size: 18px;
+}
+
+.how-link {
+  margin-left: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--dinner);
+  white-space: nowrap;
+}
+
+[data-demo] {
+  cursor: pointer;
+}
