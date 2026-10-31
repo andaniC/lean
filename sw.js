@@ -1,5 +1,5 @@
 // Offline support: app shell is served from cache and refreshed in the background.
-const CACHE = "lean-v5";
+const CACHE = "lean-v6";
 const SHELL = [
   "./",
   "index.html",
@@ -65,7 +65,9 @@ self.addEventListener("fetch", (event) => {
     caches.open(CACHE).then(async (c) => {
       const cached = () =>
         c.match(req, { ignoreSearch: true }).then((hit) => hit || (req.mode === "navigate" ? c.match("index.html") : undefined));
-      const network = fetch(req).then((res) => {
+      // GitHub Pages sends max-age=600; ask the server every time (unchanged files come back as 304).
+      const fresh = req.mode === "navigate" ? fetch(req.url, { cache: "no-cache", credentials: "same-origin" }) : fetch(req, { cache: "no-cache" });
+      const network = fresh.then((res) => {
         if (res.ok) c.put(req, res.clone());
         return res;
       });

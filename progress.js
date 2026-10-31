@@ -2,7 +2,7 @@
 import { $, hydrateIcons } from "./ui.js";
 import { icons } from "./icons.js";
 import { state, streak, loggedDays, currentWeight, totalsFor } from "./store.js";
-import { bmi, bmiLabel, goalDate } from "./plan.js";
+import { bmi, bmiLabel, goalDate, direction } from "./plan.js";
 import { esc, round, round1, clamp, keyOf, addDays, mondayOf, dateOf, todayKey, longDate } from "./util.js";
 
 export function renderProgress(el, { onLogWeight }) {
@@ -12,8 +12,9 @@ export function renderProgress(el, { onLogWeight }) {
   const start = p.startWeight ?? weight;
   const target = p.targetWeight;
   let pct = 1;
-  if (p.goal === "lose" && start > target) pct = clamp((start - weight) / (start - target), 0, 1);
-  if (p.goal === "gain" && target > start) pct = clamp((weight - start) / (target - start), 0, 1);
+  const dir = direction(p);
+  if (dir === "lose" && start > target) pct = clamp((start - weight) / (start - target), 0, 1);
+  if (dir === "gain" && target > start) pct = clamp((weight - start) / (target - start), 0, 1);
   const st = streak();
   const b = round1(bmi(weight, p.height));
 
@@ -22,7 +23,7 @@ export function renderProgress(el, { onLogWeight }) {
       <div class="p-card">
         <div class="p-label">My weight</div>
         <div class="p-big">${weight}<small> kg</small></div>
-        <div class="p-sub">${p.goal === "maintain" ? "Goal: maintain" : `Goal ${target} kg`}</div>
+        <div class="p-sub">${dir === "maintain" ? (p.goal === "glutes" ? "Goal: grow glutes" : "Goal: maintain") : `Goal ${target} kg`}</div>
         <div class="bar"><i style="width:${Math.round(pct * 100)}%;background:var(--protein)"></i></div>
         <button class="btn press" data-log-weight>Log weight</button>
       </div>
@@ -33,6 +34,8 @@ export function renderProgress(el, { onLogWeight }) {
         ${weekDots()}
       </div>
     </div>
+
+    ${p.goal === "glutes" ? gluteCard(s.goals.protein) : ""}
 
     <div class="p-card p-wide">
       <div class="p-head"><h3>Weight progress</h3><span>${progressNote(p, weight, pct)}</span></div>
@@ -55,7 +58,7 @@ export function renderProgress(el, { onLogWeight }) {
 }
 
 function progressNote(p, weight, pct) {
-  if (p.goal === "maintain") return `Holding at ${weight} kg`;
+  if (direction(p) === "maintain") return p.goal === "glutes" ? `Building at ${weight} kg` : `Holding at ${weight} kg`;
   const date = goalDate({ ...p, weight });
   return pct >= 1 ? "Goal reached!" : `${Math.round(pct * 100)}% of goal${date ? ` · ETA ${date.toLocaleDateString([], { month: "short", year: "numeric" })}` : ""}`;
 }
@@ -85,7 +88,8 @@ function weightChart(p) {
   const padT = 10;
   const padB = 22;
   const kgs = pts.map((x) => x.kg);
-  if (p.goal !== "maintain") kgs.push(p.targetWeight);
+  const moving = direction(p) !== "maintain";
+  if (moving) kgs.push(p.targetWeight);
   let lo = Math.floor(Math.min(...kgs) - 1);
   let hi = Math.ceil(Math.max(...kgs) + 1);
   const t0 = pts[0].t;
@@ -97,7 +101,7 @@ function weightChart(p) {
   const ticks = [lo, (lo + hi) / 2, hi];
   const fmt = (t) => new Date(t).toLocaleDateString([], { day: "numeric", month: "short" });
   const goalLine =
-    p.goal !== "maintain"
+    moving
       ? `<line x1="${padL}" x2="${W - padR}" y1="${y(p.targetWeight)}" y2="${y(p.targetWeight)}" stroke="#3bb56b" stroke-width="1.5" stroke-dasharray="4 4"/>
          <text x="${W - padR}" y="${y(p.targetWeight) - 5}" text-anchor="end" style="fill:#3bb56b">Goal ${p.targetWeight}</text>`
       : "";
@@ -156,4 +160,21 @@ function calorieChart(goal) {
         })
         .join("")}
     </svg>`;
+}
+
+function gluteCard(proteinGoal) {
+  const eaten = round(totalsFor(todayKey()).protein);
+  const pct = proteinGoal ? clamp(eaten / proteinGoal, 0, 1) : 0;
+  const left = Math.max(0, proteinGoal - eaten);
+  return `
+    <div class="p-card p-wide glute-box">
+      <div class="p-head"><h3>🍑 Glute plan</h3><span>${left ? `${left} g protein to go today` : "Protein goal hit today!"}</span></div>
+      <div class="p-big" style="margin-top:10px">${eaten}<small> / ${proteinGoal} g protein</small></div>
+      <div class="bar"><i style="width:${Math.round(pct * 100)}%;background:var(--protein)"></i></div>
+      <ul>
+        <li>Train glutes 2–3 times a week: hip thrusts, Romanian deadlifts, squats, lunges</li>
+        <li>Add a little weight or a few reps each week</li>
+        <li>Sleep 7–9 hours to recover and grow</li>
+      </ul>
+    </div>`;
 }

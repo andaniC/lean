@@ -3046,3 +3046,25 @@ input[type="number"]::-webkit-inner-spin-button {
 .big-stat .ic-box .ic {
   color: var(--flame);
 }
+
+.glute-box {
+  margin-top: 12px;
+  background: #fff1f0;
+}
+
+.glute-box ul {
+  margin: 10px 0 0;
+  padding: 0 0 0 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.glute-box li + li {
+  margin-top: 4px;
+}
+
+.glute-box b {
+  color: var(--ink);
+}

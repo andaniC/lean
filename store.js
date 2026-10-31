@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS = {
     pace: 0.5,
     workouts: "0-2",
     wants: [],
+    glutes: "lean",
     startWeight: 70,
     startDate: null,
   },
