@@ -7,6 +7,8 @@ calories and macros against a personal daily plan.
 
 - `public/` – the installable web app (plain HTML/CSS/ES modules, no build step). Everything a phone
   needs is in here; data is stored on the phone in IndexedDB.
+- Workouts: she builds her own workouts from a glute exercise library (demo GIFs from the free
+  ExerciseDB API) or 1,500 searchable exercises; squats can be counted on-device with MediaPipe pose tracking.
 - `supabase/functions/lean-food-ai/` – Supabase Edge Function that holds the API keys and does the work:
   - photo / label / text analysis with Claude Sonnet 5.5 (`ANTHROPIC_API_KEY`)
   - food search with USDA FoodData Central (`USDA_API_KEY`)
@@ -31,8 +33,14 @@ supabase secrets set --project-ref iuwgetnugmpeyelztnvq APP_ACCESS_CODE=new-code
 
 ## Publish the app
 
-Upload the contents of `public/` to any static HTTPS host (GitHub Pages, Netlify, Cloudflare Pages).
-After changing files in `public/`, bump `CACHE` in `public/sw.js` so phones pick up the new version.
+GitHub Pages serves the `gh-pages` branch:
+
+```sh
+npm run deploy:beta   # https://andanic.github.io/lean/beta/  (separate data, shows "beta")
+npm run deploy:prod   # https://andanic.github.io/lean/
+```
+
+Bump `CACHE` in `public/sw.js` with each release.
 
 ## Install on iPhone
 

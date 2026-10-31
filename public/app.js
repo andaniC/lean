@@ -11,6 +11,7 @@ import {
   saveEntry,
   waterFor,
   setWater,
+  burnedFor,
 } from "./store.js";
 import { $, $$, hydrateIcons, setRing, animateNumber, toast } from "./ui.js";
 import { icons } from "./icons.js";
@@ -18,6 +19,8 @@ import { initCamera, runAnalysis } from "./capture.js";
 import { openPlusMenu, openEntry, openSettings, openWeightSheet } from "./flows.js";
 import { startOnboarding, codeFromUrl } from "./onboarding.js";
 import { renderProgress } from "./progress.js";
+import { renderWorkouts, wireWorkouts } from "./workouts.js";
+import { initSquatCounter } from "./squats.js";
 import { dateOf, todayKey, addDays, mondayOf, keyOf, round, esc, clamp, haptic, mealFor, MEAL_LABEL, clock } from "./util.js";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -52,10 +55,12 @@ function renderSummary() {
   const g = state.settings.goals;
   const t = totalsFor(state.selected);
   const eaten = state.calView === "eaten";
-  const left = g.calories - t.calories;
+  // Optionally "eat back" exercise calories.
+  const budget = g.calories + (state.settings.addBurned ? burnedFor(state.selected) : 0);
+  const left = budget - t.calories;
   animateNumber($("#cal-num"), eaten ? round(t.calories) : Math.abs(round(left)));
   $("#cal-label").textContent = eaten ? "Calories eaten" : left >= 0 ? "Calories left" : "Calories over";
-  setRing($("#cal-ring"), g.calories ? t.calories / g.calories : 0, 10.4, flame);
+  setRing($("#cal-ring"), budget ? t.calories / budget : 0, 10.4, flame);
 
   for (const key of ["protein", "carbs", "fat"]) {
     const name = key[0].toUpperCase() + key.slice(1);
@@ -283,10 +288,10 @@ function moveIndicator() {
 
 function renderTabs() {
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === state.tab));
-  const home = $("#screen-home");
-  const prog = $("#screen-progress");
-  if (home.hidden !== (state.tab !== "home")) home.hidden = state.tab !== "home";
-  if (prog.hidden !== (state.tab !== "progress")) prog.hidden = state.tab !== "progress";
+  for (const [tab, id] of [["home", "#screen-home"], ["workouts", "#screen-workouts"], ["progress", "#screen-progress"]]) {
+    const el = $(id);
+    if (el.hidden !== (state.tab !== tab)) el.hidden = state.tab !== tab;
+  }
   moveIndicator();
 }
 
@@ -299,6 +304,8 @@ function render() {
     renderSummary();
     renderWater();
     renderLog();
+  } else if (state.tab === "workouts") {
+    renderWorkouts($("#workouts-body"));
   } else {
     renderProgress($("#progress-body"), { onLogWeight: openWeightSheet });
   }
@@ -331,6 +338,7 @@ const settingsOpts = { onRedoOnboarding: () => startOnboarding(render, { fromSet
 function wire() {
   $$(".tab").forEach((t) =>
     t.addEventListener("click", () => {
+      if (t.hasAttribute("data-profile")) return openSettings(settingsOpts);
       if (state.tab === t.dataset.tab) return;
       state.tab = t.dataset.tab;
       window.scrollTo({ top: 0 });
@@ -415,6 +423,9 @@ function wire() {
     week.getBoundingClientRect();
     week.classList.add(dir > 0 ? "slide-left" : "slide-right");
   });
+
+  wireWorkouts($("#workouts-body"));
+  initSquatCounter();
 
   // Food list
   const list = $("#log-list");

@@ -521,6 +521,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
             <div class="row"><span class="dot" style="background:var(--carbs)"></span><span class="row-label">Carbs (g)</span><input type="number" inputmode="numeric" data-goal="carbs" value="${s.goals.carbs}"></div>
             <div class="row"><span class="dot" style="background:var(--fat)"></span><span class="row-label">Fat (g)</span><input type="number" inputmode="numeric" data-goal="fat" value="${s.goals.fat}"></div>
             <div class="row"><span class="dot" style="background:var(--water)"></span><span class="row-label">Water (ml)</span><input type="number" inputmode="numeric" step="250" data-goal="water" value="${s.goals.water}"></div>
+            <div class="row"><span class="row-label">Add exercise calories to my goal<small>Eat back what you burn in workouts</small></span><label class="switch"><input type="checkbox" data-addburned ${s.addBurned ? "checked" : ""}><i></i></label></div>
             <div class="row"><span class="row-label">Recalculate from my details<small>Uses the details below</small></span><button class="row-action" data-recalc>Update</button></div>
           </div>
         </section>
@@ -610,6 +611,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
         })
       );
       $("[data-recalc]", sheet).addEventListener("click", () => recalc());
+      $("[data-addburned]", sheet).addEventListener("change", (e) => updateSettings({ addBurned: e.target.checked }));
 
       const status = $("[data-status]", sheet);
       const codeInput = $("[data-code]", sheet);
@@ -630,7 +632,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
 
       $("[data-export]", sheet).addEventListener("click", () => {
         const { accessCode, ...settings } = state.settings;
-        const blob = new Blob([JSON.stringify({ app: "lean", version: 2, settings, entries: state.entries, weights: state.weights, water: state.water })], {
+        const blob = new Blob([JSON.stringify({ app: "lean", version: 3, settings, entries: state.entries, weights: state.weights, water: state.water, workouts: state.workouts })], {
           type: "application/json",
         });
         const a = document.createElement("a");
@@ -654,7 +656,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
               confirm: "Restore",
             });
             if (!ok) return;
-            await replaceAll({ entries: data.entries, weights: data.weights ?? [], water: data.water ?? {} });
+            await replaceAll({ entries: data.entries, weights: data.weights ?? [], water: data.water ?? {}, workouts: data.workouts ?? [] });
             if (data.settings) updateSettings({ ...data.settings, accessCode: state.settings.accessCode });
             close();
             toast("Backup restored");

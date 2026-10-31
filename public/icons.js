@@ -53,6 +53,11 @@ export const icons = {
   glassFull:
     `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 9.5h11.4l-1.2 10.1a1.6 1.6 0 0 1-1.6 1.4H9.1a1.6 1.6 0 0 1-1.6-1.4z" fill="currentColor"/>` +
     `<path d="M5.5 3.5h13l-1.6 16.1a1.6 1.6 0 0 1-1.6 1.4H8.7a1.6 1.6 0 0 1-1.6-1.4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+  dumbbell: s(`<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>`, `stroke-width="2.4"`),
+  speaker: s(`<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>`),
+  speakerOff: s(`<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>`),
+  flip: s(`<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v9A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M9 12.5a3 3 0 0 1 5.2-2M15 13.5a3 3 0 0 1-5.2 2M14.5 8.5v2h-2M9.5 17.5v-2h2"/>`),
+  timer: s(`<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.5l2 2M9.5 3h5"/>`),
   search: s(`<circle cx="10.8" cy="10.8" r="6.3"/><path d="M20 20l-4.6-4.6"/>`, `stroke-width="2.3"`),
   share: s(`<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H18"/>`),
   wand: s(`<path d="M4 20 15 9M13.5 4.5v2M18.5 8.5h2M17 4.8l-1.4 1.4M9.5 4.5v2M8.5 5.5h2M19.5 13.5v2M18.5 14.5h2"/>`),

@@ -6,7 +6,9 @@
   "scripts": {
     "vendor": "esbuild scripts/zxing-entry.js --bundle --format=esm --platform=browser --minify --outfile=public/vendor/zxing.js",
     "serve": "python3 -m http.server 5173 --directory public",
-    "deploy:function": "supabase functions deploy lean-food-ai --project-ref iuwgetnugmpeyelztnvq --no-verify-jwt"
+    "deploy:function": "supabase functions deploy lean-food-ai --project-ref iuwgetnugmpeyelztnvq --no-verify-jwt",
+    "deploy:beta": "scripts/deploy.sh beta",
+    "deploy:prod": "scripts/deploy.sh prod"
   },
   "devDependencies": {
     "@zxing/library": "0.23.0",
