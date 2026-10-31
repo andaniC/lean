@@ -1,0 +1,15 @@
+{
+  "name": "lean-pwa",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "vendor": "esbuild scripts/zxing-entry.js --bundle --format=esm --platform=browser --minify --outfile=public/vendor/zxing.js",
+    "serve": "python3 -m http.server 5173 --directory public",
+    "deploy:function": "supabase functions deploy lean-food-ai --project-ref iuwgetnugmpeyelztnvq --no-verify-jwt"
+  },
+  "devDependencies": {
+    "@zxing/library": "0.23.0",
+    "esbuild": "0.28.2"
+  }
+}
