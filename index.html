@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="Snap a photo of your food and track calories and macros." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Lean" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Lean</title>
+  </head>
+  <body>
+    <div id="app" hidden>
+      <!-- Calories (home) -->
+      <main class="screen" id="screen-home">
+        <header class="top">
+          <h1 class="brand">Lean</h1>
+          <div class="top-actions">
+            <button class="streak press" id="streak" aria-label="Day streak">
+              <span class="streak-check" data-icon="check"></span>
+              <span id="streak-count">0</span>
+            </button>
+            <button class="avatar press" id="open-settings" aria-label="Profile and settings" data-icon="person"></button>
+          </div>
+        </header>
+
+        <div class="week" id="week"></div>
+
+        <button class="card cal-card press" id="cal-card">
+          <div>
+            <div class="cal-num" id="cal-num">0</div>
+            <div class="cal-label" id="cal-label">Calories left</div>
+          </div>
+          <div class="ring ring-lg" id="cal-ring"></div>
+        </button>
+
+        <div class="macros">
+          <div class="card macro">
+            <div class="macro-num" id="protein-num">0g</div>
+            <div class="macro-label" id="protein-label">Protein left</div>
+            <div class="ring ring-sm protein" id="protein-ring"></div>
+          </div>
+          <div class="card macro">
+            <div class="macro-num" id="carbs-num">0g</div>
+            <div class="macro-label" id="carbs-label">Carbs left</div>
+            <div class="ring ring-sm carbs" id="carbs-ring"></div>
+          </div>
+          <div class="card macro">
+            <div class="macro-num" id="fat-num">0g</div>
+            <div class="macro-label" id="fat-label">Fat left</div>
+            <div class="ring ring-sm fat" id="fat-ring"></div>
+          </div>
+        </div>
+
+        <button class="banner press" id="code-banner" hidden>
+          <span data-icon="key"></span>
+          <div><b>Connect food scanning</b><span>Enter your access code in Settings</span></div>
+        </button>
+
+        <h2 class="section-title">Recently Logged</h2>
+        <div id="log-list"></div>
+      </main>
+
+      <!-- Progress -->
+      <main class="screen" id="screen-progress" hidden>
+        <header class="top">
+          <h1 class="brand">Progress</h1>
+          <div class="top-actions">
+            <button class="avatar press" data-open-settings aria-label="Profile and settings" data-icon="person"></button>
+          </div>
+        </header>
+        <div id="progress-body"></div>
+      </main>
+    </div>
+
+    <nav class="tabbar" id="tabbar" hidden>
+      <div class="tabbar-inner">
+        <span class="tab-indicator" id="tab-indicator"></span>
+        <button class="tab active" data-tab="home"><span data-icon="grid"></span>Calories</button>
+        <button class="plus" id="plus" aria-label="Add food" data-icon="plus"></button>
+        <button class="tab" data-tab="progress"><span data-icon="progress"></span>Progress</button>
+      </div>
+    </nav>
+
+    <!-- Camera -->
+    <div class="camera" id="camera" data-mode="scan" hidden>
+      <video id="cam-video" playsinline muted autoplay></video>
+      <div class="cam-shade"></div>
+      <div class="cam-fallback" id="cam-fallback" hidden>
+        <h3>Camera unavailable</h3>
+        <p id="cam-fallback-text">Allow camera access, or pick a photo instead.</p>
+        <button class="btn" id="cam-fallback-btn" style="background: #fff; color: #111">Take or choose a photo</button>
+      </div>
+      <div class="frame"><i></i><i></i><i></i><i></i><span class="scanline"></span></div>
+      <button class="cam-btn cam-close" id="cam-close" aria-label="Close camera" data-icon="close"></button>
+      <div class="cam-hint" id="cam-hint" hidden></div>
+      <div class="cam-bottom">
+        <div class="modes">
+          <button class="mode active" data-mode="scan"><span data-icon="scanFood"></span>Scan Food</button>
+          <button class="mode" data-mode="barcode"><span data-icon="barcode"></span>Barcode</button>
+          <button class="mode" data-mode="label"><span data-icon="label"></span>Food Label</button>
+        </div>
+        <div class="cam-controls">
+          <button class="cam-btn" id="cam-gallery" aria-label="Choose from photos" data-icon="image"></button>
+          <button class="shutter" id="cam-shutter" aria-label="Take photo"></button>
+          <button class="cam-btn" id="cam-torch" aria-label="Flash" data-icon="bolt"></button>
+        </div>
+      </div>
+      <div class="cam-flash" id="cam-flash"></div>
+    </div>
+
+    <input type="file" accept="image/*" id="file-gallery" hidden />
+    <input type="file" accept="image/*" capture="environment" id="file-camera" hidden />
+    <input type="file" accept="application/json,.json" id="file-import" hidden />
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
