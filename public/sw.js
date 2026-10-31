@@ -1,5 +1,5 @@
 // Offline support: app shell is served from cache and refreshed in the background.
-const CACHE = "lean-v3";
+const CACHE = "lean-v4";
 const SHELL = [
   "./",
   "index.html",
