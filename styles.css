@@ -15,6 +15,18 @@
   --fat: #f0644f;
   --ok: #3bb56b;
   --over: #ef6c63;
+  --flame: #ff7a1a;
+  --water: #3b8cff;
+  --cal-bg: linear-gradient(140deg, #fff6ee 0%, #ffe8da 100%);
+  --protein-bg: #e8f6ee;
+  --carbs-bg: #fff3e0;
+  --fat-bg: #fdecea;
+  --water-bg: #eaf3ff;
+  --ok-bg: #e5f6ec;
+  --breakfast: #f4a226;
+  --lunch: #2f9a63;
+  --dinner: #6d5df6;
+  --snack: #e2558f;
   --radius-lg: 24px;
   --radius-md: 20px;
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
@@ -67,6 +79,18 @@ button {
 
 button:disabled {
   cursor: default;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 [hidden] {
@@ -142,7 +166,7 @@ button:disabled {
   height: 34px;
   padding: 0 13px 0 9px;
   border-radius: 17px;
-  background: var(--chip);
+  background: var(--ok-bg);
   color: var(--ok);
   font-size: 15px;
   font-weight: 600;
@@ -150,6 +174,7 @@ button:disabled {
 
 .streak.zero {
   color: var(--muted);
+  background: var(--chip);
 }
 
 .streak-check {
@@ -268,6 +293,7 @@ button:disabled {
 }
 
 .cal-card {
+  background: var(--cal-bg);
   margin-top: 14px;
   min-height: 152px;
   padding: 22px 22px 22px 26px;
@@ -328,7 +354,15 @@ button:disabled {
 }
 
 .ring-lg .arc {
-  stroke: var(--ink);
+  stroke: var(--flame);
+}
+
+.ring-lg .track {
+  stroke: rgba(255, 122, 26, 0.16);
+}
+
+.ring-lg > .ic {
+  color: var(--flame);
 }
 
 .macros {
@@ -378,6 +412,30 @@ button:disabled {
   stroke: var(--fat);
 }
 
+.ring-sm.protein .track {
+  stroke: rgba(47, 154, 99, 0.18);
+}
+
+.ring-sm.carbs .track {
+  stroke: rgba(244, 162, 38, 0.2);
+}
+
+.ring-sm.fat .track {
+  stroke: rgba(240, 100, 79, 0.18);
+}
+
+.macro:nth-child(1) {
+  background: var(--protein-bg);
+}
+
+.macro:nth-child(2) {
+  background: var(--carbs-bg);
+}
+
+.macro:nth-child(3) {
+  background: var(--fat-bg);
+}
+
 .section-title {
   margin: 26px 0 12px;
   font-size: 18px;
@@ -399,8 +457,63 @@ button:disabled {
   animation: food-in 0.45s var(--ease-sheet);
 }
 
-.food + .food {
+/* swipe to delete */
+
+.swipe {
+  position: relative;
+  border-radius: 22px;
+  touch-action: pan-y;
+}
+
+.swipe + .swipe {
   margin-top: 12px;
+}
+
+.swipe-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 22px;
+  background: #ef4b41;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.swipe.dragging .swipe-bg,
+.swipe.open .swipe-bg {
+  opacity: 1;
+}
+
+.swipe-del {
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.swipe-del .ic {
+  font-size: 22px;
+}
+
+.swipe > .food {
+  position: relative;
+  transition: transform 0.38s var(--ease-sheet);
+}
+
+.swipe.dragging > .food {
+  transition: none;
+}
+
+.swipe.removing {
+  overflow: hidden;
+  transition: height 0.28s var(--ease-sheet), margin 0.28s var(--ease-sheet), opacity 0.2s ease;
 }
 
 @keyframes food-in {
@@ -412,8 +525,8 @@ button:disabled {
 
 .food-thumb {
   position: relative;
-  width: 92px;
-  height: 92px;
+  width: 96px;
+  height: 96px;
   flex: none;
   border-radius: 16px;
   overflow: hidden;
@@ -459,40 +572,69 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
-.food-meta {
+.food-top {
   display: flex;
-  gap: 10px;
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 500;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--muted);
 }
 
-.food-meta i {
-  font-style: normal;
+.meal-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--m, var(--muted));
+}
+
+.food .food-kcal {
+  margin-top: 3px;
+}
+
+.food-kcal .ic {
+  color: var(--flame);
+}
+
+.food .food-name {
+  margin-top: 2px;
+}
+
+.mchips {
+  display: flex;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.mchip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.food-meta i::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+.mchip b {
+  font-weight: 800;
 }
 
-.food-meta .p::before {
-  background: var(--protein);
+.mchip.p {
+  background: var(--protein-bg);
+  color: #1f7a4a;
 }
 
-.food-meta .c::before {
-  background: var(--carbs);
+.mchip.c {
+  background: var(--carbs-bg);
+  color: #b26a00;
 }
 
-.food-meta .f::before {
-  background: var(--fat);
+.mchip.f {
+  background: var(--fat-bg);
+  color: #c63c2b;
 }
 
 /* pending + error states */
@@ -1179,7 +1321,7 @@ button:disabled {
   font-weight: 600;
 }
 
-.tile span {
+.tile div > span {
   display: block;
   margin-top: 2px;
   font-size: 12px;
@@ -1555,8 +1697,8 @@ button:disabled {
   flex: 1;
 }
 
-.big-stat span,
-.mini-stat span {
+.big-stat label > span,
+.mini-stat > span {
   display: block;
   font-size: 12.5px;
   font-weight: 500;
@@ -1596,13 +1738,13 @@ button:disabled {
   background: var(--card);
 }
 
-.mini-stat span {
+.mini-stat > span {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.mini-stat span::before {
+.mini-stat > span::before {
   content: "";
   width: 8px;
   height: 8px;
@@ -2529,7 +2671,10 @@ button:disabled {
 }
 
 .plan-item input {
-  width: 72px;
+  width: 4ch;
+  min-width: 1ch;
+  padding: 0;
+  margin: 0;
   border: 0;
   outline: none;
   background: none;
@@ -2647,4 +2792,239 @@ button:disabled {
   display: flex;
   align-items: baseline;
   justify-content: center;
+}
+
+
+/* ------------------------------------------------------------------ calories / water pager */
+
+.pager {
+  display: flex;
+  margin: 0 -20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pager::-webkit-scrollbar {
+  display: none;
+}
+
+.page {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.dots button {
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
+  background: #d9d9dc;
+  transition: width 0.3s var(--ease-sheet), background-color 0.3s ease;
+}
+
+.dots button.on {
+  width: 20px;
+  background: var(--ink);
+}
+
+.water-card {
+  flex: 1;
+  margin-top: 14px;
+  padding: 22px 22px 18px 26px;
+  background: var(--water-bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.water-card.flash {
+  animation: water-flash 0.9s ease;
+}
+
+@keyframes water-flash {
+  30% {
+    box-shadow: 0 0 0 4px rgba(59, 140, 255, 0.35);
+  }
+}
+
+.water-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.water-card .cal-num small {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.water-ring .arc {
+  stroke: var(--water);
+}
+
+.water-ring .track {
+  stroke: rgba(59, 140, 255, 0.16);
+}
+
+.water-ring > .ic {
+  color: var(--water);
+}
+
+.glasses {
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.glass {
+  flex: 1;
+  max-width: 36px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  color: rgba(59, 140, 255, 0.35);
+  transition: color 0.25s ease, transform 0.25s var(--ease-sheet);
+}
+
+.glass.full {
+  color: var(--water);
+}
+
+.glass:active {
+  transform: scale(0.9);
+}
+
+.water-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.water-btn {
+  width: 58px;
+  height: 46px;
+  border-radius: 23px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+.water-btn.add {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--water);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ meal + time in detail */
+
+.meal-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.meal-chip {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--card);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meal-chip .meal-dot {
+  background: var(--m);
+}
+
+.meal-chip.active {
+  background: #fff;
+  border-color: var(--m);
+}
+
+.time-input {
+  margin-left: auto;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+
+/* ------------------------------------------------------------------ colorful tiles + toast action */
+
+.tile-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.tile .tile-ic .ic {
+  font-size: 22px;
+}
+
+.toast.has-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 8px 18px;
+}
+
+/* Only a visible toast may take taps. */
+.toast.has-action.show {
+  pointer-events: auto;
+}
+
+.toast button {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.streak-card {
+  background: #fff3ea;
+}
+
+.big-stat .ic-box .ic {
+  color: var(--flame);
 }

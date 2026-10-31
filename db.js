@@ -1,6 +1,6 @@
-// Tiny IndexedDB wrapper: "entries" (food logs) and "weights" (weigh-ins).
+// Tiny IndexedDB wrapper: "entries" (food logs), "weights" (weigh-ins) and "water" (ml per day).
 const DB_NAME = "lean";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let dbPromise;
 
 function open() {
@@ -10,6 +10,7 @@ function open() {
       const db = req.result;
       if (!db.objectStoreNames.contains("entries")) db.createObjectStore("entries", { keyPath: "id" });
       if (!db.objectStoreNames.contains("weights")) db.createObjectStore("weights", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("water")) db.createObjectStore("water", { keyPath: "date" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);

@@ -1,5 +1,5 @@
 // Bottom sheets: + menu, food database, amounts, describe, manual, food detail, weight, settings.
-import { $, $$, openSheet, confirmSheet, toast, wheel, range, hydrateIcons } from "./ui.js";
+import { $, $$, openSheet, confirmSheet, toast, wheel, range, hydrateIcons, fitInput } from "./ui.js";
 import { icons } from "./icons.js";
 import { searchFoods, checkConnection } from "./ai.js";
 import {
@@ -15,7 +15,7 @@ import {
 } from "./store.js";
 import { openCamera, newEntry, runAnalysis, startTextAnalysis, photoBase64 } from "./capture.js";
 import { computePlan } from "./plan.js";
-import { esc, round, round1, num, uid, todayKey, timeLabel, clamp, haptic } from "./util.js";
+import { esc, round, round1, num, uid, todayKey, timeLabel, clamp, haptic, pad, dateOf, mealFor, MEALS, MEAL_LABEL } from "./util.js";
 
 const closeBtn = `<button class="round-btn press" data-close aria-label="Close" data-icon="close"></button>`;
 
@@ -28,19 +28,22 @@ function goHome() {
 
 // ------------------------------------------------------------------ + menu
 
+const tile = (act, iconName, bg, color, title, sub) => `
+  <button class="tile press" data-act="${act}">
+    <span class="tile-ic" style="background:${bg};color:${color}"><span class="ic">${icons[iconName]}</span></span>
+    <div><b>${title}</b><span>${sub}</span></div></button>`;
+
 export function openPlusMenu() {
   openSheet({
     html: `
       <div class="sheet-head"><h2 class="sheet-title">Log food</h2>${closeBtn}</div>
       <div class="tiles">
-        <button class="tile press" data-act="scan"><span data-icon="camera"></span>
-          <div><b>Scan food</b><span>Snap a photo and AI counts it</span></div></button>
-        <button class="tile press" data-act="search"><span data-icon="search"></span>
-          <div><b>Food database</b><span>Search foods by name</span></div></button>
-        <button class="tile press" data-act="describe"><span data-icon="sparkle"></span>
-          <div><b>Describe meal</b><span>Type what you ate</span></div></button>
-        <button class="tile press" data-act="manual"><span data-icon="pencil"></span>
-          <div><b>Manual entry</b><span>Enter exact numbers</span></div></button>
+        ${tile("scan", "camera", "#fff0e5", "var(--flame)", "Scan food", "Snap a photo and AI counts it")}
+        ${tile("search", "search", "#efedff", "var(--dinner)", "Food database", "Search foods by name")}
+        ${tile("describe", "sparkle", "#fdedf4", "var(--snack)", "Describe meal", "Type what you ate")}
+        ${tile("manual", "pencil", "#fff3e0", "#c27c0e", "Manual entry", "Enter exact numbers")}
+        ${tile("water", "drop", "var(--water-bg)", "var(--water)", "Log water", "Add a glass of water")}
+        ${tile("weight", "scale", "var(--protein-bg)", "var(--protein)", "Log weight", "Track your progress")}
       </div>`,
     onMount(sheet, close) {
       $$("[data-act]", sheet).forEach((b) =>
@@ -52,6 +55,8 @@ export function openPlusMenu() {
             if (act === "search") openFoodDatabase();
             if (act === "describe") openDescribe();
             if (act === "manual") openManual();
+            if (act === "water") document.dispatchEvent(new CustomEvent("lean:water"));
+            if (act === "weight") openWeightSheet();
           }, 180);
         })
       );
@@ -300,7 +305,8 @@ export function openManual() {
 // ------------------------------------------------------------------ food detail
 
 export function openEntry(entry) {
-  const draft = { ...entry, servings: entry.servings || 1 };
+  const draft = { ...entry, servings: entry.servings || 1, meal: entry.meal || mealFor(entry.time) };
+  const t0 = new Date(entry.time);
   const base = { calories: entry.calories, protein: entry.protein, carbs: entry.carbs, fat: entry.fat };
   const photo = entry.photo
     ? `<div class="detail-photo"><img src="${entry.photo}" alt="">
@@ -323,6 +329,10 @@ export function openEntry(entry) {
             <output data-servings>${draft.servings}</output>
             <button data-step="0.5" aria-label="More servings" data-icon="plus"></button>
           </div>
+        </div>
+        <div class="meal-row">
+          ${MEALS.map((m) => `<button class="meal-chip ${draft.meal === m ? "active" : ""}" data-meal="${m}" style="--m:var(--${m})"><span class="meal-dot"></span>${MEAL_LABEL[m]}</button>`).join("")}
+          <input class="time-input" type="time" data-time value="${pad(t0.getHours())}:${pad(t0.getMinutes())}" aria-label="Time eaten">
         </div>
         <div class="big-stat">
           <div class="ic-box" data-icon="flame"></div>
@@ -363,7 +373,7 @@ export function openEntry(entry) {
     onMount(sheet, close) {
       const fields = ["calories", "protein", "carbs", "fat"];
       const fit = (el) => {
-        if (el.closest(".mini-stat")) el.style.width = `${Math.max(1, el.value.length) + 0.4}ch`;
+        if (el.closest(".mini-stat")) fitInput(el);
       };
       const paint = () => {
         for (const f of fields) {
@@ -387,11 +397,27 @@ export function openEntry(entry) {
           paint();
         })
       );
+      $$("[data-meal]", sheet).forEach((b) =>
+        b.addEventListener("click", () => {
+          draft.meal = b.dataset.meal;
+          $$("[data-meal]", sheet).forEach((x) => x.classList.toggle("active", x === b));
+          haptic(6);
+        })
+      );
       $("[data-save]", sheet).addEventListener("click", async () => {
+        const [hh, mm] = ($("[data-time]", sheet).value || "").split(":").map(Number);
+        let time = entry.time;
+        if (Number.isFinite(hh) && Number.isFinite(mm)) {
+          const d = dateOf(entry.date);
+          d.setHours(hh, mm, 0, 0);
+          time = d.getTime();
+        }
         close();
         await saveEntry({
           ...entry,
           name: $(".name-input", sheet).value.trim() || entry.name,
+          meal: draft.meal,
+          time,
           servings: draft.servings,
           calories: round1(base.calories),
           protein: round1(base.protein),
@@ -494,6 +520,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
             <div class="row"><span class="dot" style="background:var(--protein)"></span><span class="row-label">Protein (g)</span><input type="number" inputmode="numeric" data-goal="protein" value="${s.goals.protein}"></div>
             <div class="row"><span class="dot" style="background:var(--carbs)"></span><span class="row-label">Carbs (g)</span><input type="number" inputmode="numeric" data-goal="carbs" value="${s.goals.carbs}"></div>
             <div class="row"><span class="dot" style="background:var(--fat)"></span><span class="row-label">Fat (g)</span><input type="number" inputmode="numeric" data-goal="fat" value="${s.goals.fat}"></div>
+            <div class="row"><span class="dot" style="background:var(--water)"></span><span class="row-label">Water (ml)</span><input type="number" inputmode="numeric" step="250" data-goal="water" value="${s.goals.water}"></div>
             <div class="row"><span class="row-label">Recalculate from my details<small>Uses the details below</small></span><button class="row-action" data-recalc>Update</button></div>
           </div>
         </section>
@@ -558,8 +585,8 @@ export function openSettings({ onRedoOnboarding } = {}) {
       );
       $("[data-recalc]", sheet).addEventListener("click", () => {
         const plan = computePlan({ ...state.settings.profile, weight: currentWeight() });
-        updateSettings({ goals: { calories: plan.calories, protein: plan.protein, carbs: plan.carbs, fat: plan.fat } });
-        for (const k of ["calories", "protein", "carbs", "fat"]) $(`[data-goal="${k}"]`, sheet).value = plan[k];
+        updateSettings({ goals: { calories: plan.calories, protein: plan.protein, carbs: plan.carbs, fat: plan.fat, water: plan.water } });
+        for (const k of ["calories", "protein", "carbs", "fat", "water"]) $(`[data-goal="${k}"]`, sheet).value = plan[k];
         toast(`New target: ${plan.calories} calories a day`);
       });
 
@@ -582,7 +609,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
 
       $("[data-export]", sheet).addEventListener("click", () => {
         const { accessCode, ...settings } = state.settings;
-        const blob = new Blob([JSON.stringify({ app: "lean", version: 1, settings, entries: state.entries, weights: state.weights })], {
+        const blob = new Blob([JSON.stringify({ app: "lean", version: 2, settings, entries: state.entries, weights: state.weights, water: state.water })], {
           type: "application/json",
         });
         const a = document.createElement("a");
@@ -606,7 +633,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
               confirm: "Restore",
             });
             if (!ok) return;
-            await replaceAll({ entries: data.entries, weights: data.weights ?? [] });
+            await replaceAll({ entries: data.entries, weights: data.weights ?? [], water: data.water ?? {} });
             if (data.settings) updateSettings({ ...data.settings, accessCode: state.settings.accessCode });
             close();
             toast("Backup restored");

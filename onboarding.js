@@ -1,5 +1,5 @@
 // First-run onboarding: install hint, questions, plan generation, access code.
-import { $, $$, wheel, range, ringMarkup, hydrateIcons } from "./ui.js";
+import { $, $$, wheel, range, ringMarkup, hydrateIcons, fitInput } from "./ui.js";
 import { icons } from "./icons.js";
 import { state, updateSettings, saveWeight } from "./store.js";
 import { computePlan, goalDate } from "./plan.js";
@@ -397,7 +397,7 @@ const STEPS = {
     const item = (key, label, color, unit, pct) => `
       <label class="plan-item">
         <span><span class="ic" style="color:${color}">${key === "calories" ? icons.flame : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>`}</span>${label}</span>
-        <div class="ring" style="--c:${color}">${ringMarkup(pct, 9, `<b><input type="number" inputmode="numeric" data-plan="${key}" value="${a.plan[key]}" style="width:${key === "calories" ? 50 : 34}px">${unit}</b>`)}</div>
+        <div class="ring" style="--c:${color}">${ringMarkup(pct, 9, `<b><input type="number" inputmode="numeric" data-plan="${key}" value="${a.plan[key]}" style="width:${String(a.plan[key]).length}ch">${unit}</b>`)}</div>
         <span class="ic edit">${icons.pencil}</span>
       </label>`;
     return {
@@ -419,10 +419,18 @@ const STEPS = {
       cta: "Let's get started!",
       mount(el) {
         $(".ob-top", root).style.visibility = "hidden";
+        const fit = fitInput;
+        const inputs = $$("[data-plan]", el);
+        inputs.forEach((i) => {
+          fit(i);
+          i.addEventListener("input", () => fit(i));
+        });
+        document.fonts?.ready.then(() => inputs.forEach(fit));
         $$("[data-plan]", el).forEach((i) =>
           i.addEventListener("change", () => {
             const v = Math.max(0, Math.round(Number(i.value) || 0));
             i.value = v;
+            fit(i);
             a.plan[i.dataset.plan] = v;
           })
         );
@@ -444,7 +452,7 @@ const STEPS = {
         updateSettings({
           name: a.name.trim(),
           profile,
-          goals: { calories: a.plan.calories, protein: a.plan.protein, carbs: a.plan.carbs, fat: a.plan.fat },
+          goals: { calories: a.plan.calories, protein: a.plan.protein, carbs: a.plan.carbs, fat: a.plan.fat, water: a.plan.water },
         });
         await saveWeight({ id: uid(), date: todayKey(), time: Date.now(), kg: a.weight });
         // If we already have a working code (from a link or an earlier setup), skip that step.

@@ -1,13 +1,27 @@
-import { state, onChange, emit, loadAll, totalsFor, entriesFor, streak, updateSettings, deleteEntry } from "./store.js";
-import { $, $$, hydrateIcons, setRing, animateNumber, toast, confirmSheet } from "./ui.js";
+import {
+  state,
+  onChange,
+  emit,
+  loadAll,
+  totalsFor,
+  entriesFor,
+  streak,
+  updateSettings,
+  deleteEntry,
+  saveEntry,
+  waterFor,
+  setWater,
+} from "./store.js";
+import { $, $$, hydrateIcons, setRing, animateNumber, toast } from "./ui.js";
 import { icons } from "./icons.js";
 import { initCamera, runAnalysis } from "./capture.js";
 import { openPlusMenu, openEntry, openSettings, openWeightSheet } from "./flows.js";
 import { startOnboarding, codeFromUrl } from "./onboarding.js";
 import { renderProgress } from "./progress.js";
-import { dateOf, todayKey, addDays, mondayOf, keyOf, round, esc } from "./util.js";
+import { dateOf, todayKey, addDays, mondayOf, keyOf, round, esc, clamp, haptic, mealFor, MEAL_LABEL, clock } from "./util.js";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const GLASS_ML = 250;
 const flame = `<span class="ic">${icons.flame}</span>`;
 let lastToday = todayKey();
 
@@ -53,6 +67,31 @@ function renderSummary() {
   $("#code-banner").hidden = !!state.settings.accessCode;
 }
 
+function renderWater() {
+  const goal = state.settings.goals.water || 2000;
+  const ml = waterFor(state.selected);
+  animateNumber($("#water-num"), ml);
+  $("#water-label").textContent = `Water · goal ${goal.toLocaleString()} ml`;
+  setRing($("#water-ring"), ml / goal, 10.4, `<span class="ic">${icons.drop}</span>`);
+  const count = clamp(Math.round(goal / GLASS_ML), 4, 12);
+  const full = Math.floor(ml / GLASS_ML);
+  const box = $("#glasses");
+  if (box.childElementCount !== count) {
+    box.innerHTML = Array.from(
+      { length: count },
+      (_, i) => `<button class="glass" data-glass="${i}" aria-label="${(i + 1) * GLASS_ML} ml"></button>`
+    ).join("");
+  }
+  $$(".glass", box).forEach((b, i) => {
+    const isFull = i < full;
+    if (b.dataset.full === String(isFull)) return;
+    b.dataset.full = String(isFull);
+    b.classList.toggle("full", isFull);
+    b.innerHTML = `<span class="ic">${isFull ? icons.glassFull : icons.glass}</span>`;
+  });
+  $("#water-minus").disabled = ml <= 0;
+}
+
 function thumb(entry, overlay = "") {
   const inner = entry.photo
     ? `<img src="${entry.photo}" alt="">`
@@ -60,10 +99,15 @@ function thumb(entry, overlay = "") {
   return `<div class="food-thumb">${inner}${overlay}</div>`;
 }
 
-function entryMarkup(e) {
+function mealLine(e) {
+  const meal = e.meal || mealFor(e.time);
+  return `<div class="food-top"><span class="meal-dot" style="--m:var(--${meal})"></span>${MEAL_LABEL[meal]} · ${clock(e.time)}</div>`;
+}
+
+function foodInner(e) {
   if (e.status === "pending") {
     const C = 2 * Math.PI * 21;
-    return `<div class="food" data-id="${e.id}" data-pending>
+    return `<div class="food" data-pending>
       ${thumb(e, `<div class="veil"><div class="pct-ring"><svg viewBox="0 0 50 50"><circle class="track" cx="25" cy="25" r="21"/><circle class="arc" cx="25" cy="25" r="21" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><span class="pct">0%</span></div></div>`)}
       <div class="food-body">
         <div class="pending-title">${e.source === "text" ? "Estimating…" : "Analyzing food…"}</div>
@@ -72,7 +116,7 @@ function entryMarkup(e) {
       </div></div>`;
   }
   if (e.status === "error") {
-    return `<div class="food" data-id="${e.id}">
+    return `<div class="food">
       ${thumb(e)}
       <div class="food-body">
         <div class="error-title">Couldn't analyze</div>
@@ -83,13 +127,24 @@ function entryMarkup(e) {
         </div>
       </div></div>`;
   }
-  const kcal = round(e.calories * (e.servings || 1));
-  return `<button class="food press" data-id="${e.id}" data-open>
+  const s = e.servings || 1;
+  return `<button class="food press" data-open>
     ${thumb(e)}
     <div class="food-body">
-      <div class="food-kcal">${flame}${kcal} calories</div>
+      ${mealLine(e)}
+      <div class="food-kcal">${flame}${round(e.calories * s)} calories</div>
       <div class="food-name">${esc(e.name)}</div>
+      <div class="mchips">
+        <span class="mchip p"><b>P</b>${round(e.protein * s)}g</span>
+        <span class="mchip c"><b>C</b>${round(e.carbs * s)}g</span>
+        <span class="mchip f"><b>F</b>${round(e.fat * s)}g</span>
+      </div>
     </div></button>`;
+}
+
+function entryMarkup(e) {
+  const del = `<button class="swipe-del" data-swipe-del><span class="ic">${icons.trash}</span>Delete</button>`;
+  return `<div class="swipe" data-id="${e.id}"><div class="swipe-bg">${del}${del}</div>${foodInner(e)}</div>`;
 }
 
 function renderLog() {
@@ -104,18 +159,18 @@ function renderLog() {
       </div>`;
     return;
   }
-  // Keyed update so existing cards don't re-animate on every change.
-  const old = new Map($$("[data-id]", list).map((el) => [el.dataset.id, el]));
+  // Keyed update so existing cards don't re-animate (or lose a swipe) on every change.
+  const old = new Map($$(".swipe", list).map((el) => [el.dataset.id, el]));
   const frag = document.createDocumentFragment();
   for (const e of entries) {
-    const sig = `${e.status}|${e.name}|${e.calories}|${e.servings}|${e.error}|${e.photo?.length ?? 0}`;
+    const sig = [e.status, e.name, e.calories, e.protein, e.carbs, e.fat, e.servings, e.meal, e.time, e.error, e.photo?.length ?? 0].join("|");
     let el = old.get(e.id);
     if (!el || el.dataset.sig !== sig) {
       const tpl = document.createElement("template");
       tpl.innerHTML = entryMarkup(e).trim();
       el = tpl.content.firstElementChild;
       el.dataset.sig = sig;
-      if (old.has(e.id)) el.style.animation = "none";
+      if (old.has(e.id)) $(".food", el).style.animation = "none";
     }
     frag.append(el);
   }
@@ -124,14 +179,97 @@ function renderLog() {
 
 function tickPending() {
   for (const el of $$("[data-pending]")) {
-    const e = state.entries.find((x) => x.id === el.dataset.id);
+    const id = el.closest(".swipe")?.dataset.id;
+    const e = state.entries.find((x) => x.id === id);
     if (!e?.startedAt) continue;
-    const pct = Math.min(96, Math.round(100 * (1 - Math.exp(-(Date.now() - e.startedAt) / 6500))));
+    const pct = Math.min(96, Math.round(100 * (1 - Math.exp(-(Date.now() - e.startedAt) / 7000))));
     const arc = $(".arc", el);
     const C = parseFloat(arc.getAttribute("stroke-dasharray"));
     arc.setAttribute("stroke-dashoffset", String(C * (1 - pct / 100)));
     $(".pct", el).textContent = `${pct}%`;
   }
+}
+
+// ------------------------------------------------------------------ swipe to delete
+
+const OPEN_X = 92;
+let drag = null;
+let suppressClick = false;
+
+function setOffset(sw, x) {
+  sw.dataset.x = String(x);
+  sw.classList.toggle("open", x !== 0);
+  $(".food", sw).style.transform = x ? `translateX(${x}px)` : "";
+}
+
+function closeSwipes(except) {
+  $$("#log-list .swipe.open").forEach((sw) => sw !== except && setOffset(sw, 0));
+}
+
+async function deleteWithUndo(entry) {
+  await deleteEntry(entry.id);
+  haptic(15);
+  toast(`${entry.name || "Food"} deleted`, 4500, { label: "Undo", onClick: () => saveEntry(entry) });
+}
+
+function swipeAway(sw, dir) {
+  const entry = state.entries.find((x) => x.id === sw.dataset.id);
+  if (!entry) return;
+  sw.classList.add("open");
+  $(".food", sw).style.transform = `translateX(${dir * sw.offsetWidth * 1.1}px)`;
+  sw.style.height = `${sw.offsetHeight}px`;
+  sw.getBoundingClientRect();
+  sw.classList.add("removing");
+  setTimeout(() => {
+    sw.style.height = "0px";
+    sw.style.marginTop = "0px";
+    sw.style.opacity = "0";
+  }, 170);
+  setTimeout(() => deleteWithUndo(entry), 450);
+}
+
+function wireSwipes(list) {
+  list.addEventListener("pointerdown", (e) => {
+    const sw = e.target.closest(".swipe");
+    if (!sw || e.button > 0 || e.target.closest(".swipe-del, .mini-btn")) return;
+    drag = { sw, id: e.pointerId, x0: e.clientX, y0: e.clientY, base: Number(sw.dataset.x || 0), dx: 0, axis: null };
+  });
+  list.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x0;
+    const dy = e.clientY - drag.y0;
+    if (!drag.axis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      drag.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (drag.axis === "y") {
+        drag = null;
+        return;
+      }
+      drag.sw.setPointerCapture?.(e.pointerId);
+      drag.sw.classList.add("dragging");
+      closeSwipes(drag.sw);
+    }
+    drag.dx = dx;
+    const w = drag.sw.offsetWidth;
+    const x = clamp(drag.base + dx, -w, w);
+    $(".food", drag.sw).style.transform = `translateX(${x}px)`;
+  });
+  const end = (e, cancelled = false) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const { sw, base, dx, axis } = drag;
+    drag = null;
+    if (axis !== "x") return;
+    sw.classList.remove("dragging");
+    suppressClick = true;
+    setTimeout(() => (suppressClick = false), 0);
+    const x = base + dx;
+    if (cancelled) return setOffset(sw, base);
+    if (Math.abs(x) > sw.offsetWidth * 0.5) return swipeAway(sw, Math.sign(x));
+    haptic(6);
+    setOffset(sw, Math.abs(x) > 56 ? Math.sign(x) * OPEN_X : 0);
+  };
+  list.addEventListener("pointerup", (e) => end(e));
+  list.addEventListener("pointercancel", (e) => end(e, true));
 }
 
 // ------------------------------------------------------------------ tabs
@@ -159,6 +297,7 @@ function render() {
     renderStreak();
     renderWeek();
     renderSummary();
+    renderWater();
     renderLog();
   } else {
     renderProgress($("#progress-body"), { onLogWeight: openWeightSheet });
@@ -170,6 +309,21 @@ function showApp() {
   $("#tabbar").hidden = false;
   render();
   requestAnimationFrame(moveIndicator);
+}
+
+function showWaterPage() {
+  state.tab = "home";
+  emit();
+  requestAnimationFrame(() => {
+    const pager = $("#pager");
+    // Two smooth scrolls at once can cancel each other in Chrome: jump the page, animate the pager.
+    window.scrollTo({ top: 0 });
+    pager.scrollTo({ left: pager.clientWidth, behavior: "smooth" });
+    const card = $(".water-card");
+    card.classList.remove("flash");
+    card.getBoundingClientRect();
+    card.classList.add("flash");
+  });
 }
 
 const settingsOpts = { onRedoOnboarding: () => startOnboarding(render, { fromSettings: true }) };
@@ -196,6 +350,38 @@ function wire() {
     emit();
   });
 
+  // Calories / water pager
+  const pager = $("#pager");
+  const dots = $$("#dots button");
+  pager.addEventListener(
+    "scroll",
+    () => {
+      const i = Math.round(pager.scrollLeft / pager.clientWidth);
+      dots.forEach((d, j) => d.classList.toggle("on", i === j));
+    },
+    { passive: true }
+  );
+  dots.forEach((d, j) => d.addEventListener("click", () => pager.scrollTo({ left: j * pager.clientWidth, behavior: "smooth" })));
+  document.addEventListener("lean:water", showWaterPage);
+
+  // Water
+  const addWater = (delta) => {
+    setWater(state.selected, waterFor(state.selected) + delta);
+    haptic(10);
+  };
+  $("#water-plus").addEventListener("click", () => addWater(GLASS_ML));
+  $("#water-minus").addEventListener("click", () => addWater(-GLASS_ML));
+  $("#glasses").addEventListener("click", (e) => {
+    const g = e.target.closest("[data-glass]");
+    if (!g) return;
+    const i = Number(g.dataset.glass);
+    const ml = waterFor(state.selected);
+    // Tapping the last full glass empties it; any other glass fills up to it.
+    setWater(state.selected, ml === (i + 1) * GLASS_ML ? i * GLASS_ML : (i + 1) * GLASS_ML);
+    haptic(10);
+  });
+
+  // Week strip
   $("#week").addEventListener("click", (e) => {
     const b = e.target.closest(".day");
     if (!b || b.disabled) return;
@@ -230,21 +416,23 @@ function wire() {
     week.classList.add(dir > 0 ? "slide-left" : "slide-right");
   });
 
-  $("#log-list").addEventListener("click", async (e) => {
-    const card = e.target.closest("[data-id]");
-    if (!card) return;
-    const entry = state.entries.find((x) => x.id === card.dataset.id);
+  // Food list
+  const list = $("#log-list");
+  wireSwipes(list);
+  list.addEventListener("click", async (e) => {
+    if (suppressClick) return;
+    const sw = e.target.closest(".swipe");
+    if (!sw) return;
+    const entry = state.entries.find((x) => x.id === sw.dataset.id);
     if (!entry) return;
+    if (e.target.closest("[data-swipe-del]") || e.target.closest("[data-remove]")) return swipeAway(sw, -1);
+    if (sw.classList.contains("open")) return setOffset(sw, 0);
     if (e.target.closest("[data-retry]")) {
       if (!state.settings.accessCode) return openSettings(settingsOpts);
       runAnalysis({ ...entry });
       return;
     }
-    if (e.target.closest("[data-remove]")) {
-      const ok = await confirmSheet({ title: "Delete this scan?", text: "It will be removed from your log.", confirm: "Delete", danger: true });
-      if (ok) deleteEntry(entry.id);
-      return;
-    }
+    closeSwipes();
     if (entry.status === "done") openEntry(entry);
   });
 

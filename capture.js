@@ -10,14 +10,15 @@ import {
   fileToImage,
   setTorch,
   dataUrlToImage,
+  streamLive,
 } from "./camera.js";
 import { getDecoder } from "./barcode.js";
 import { analyzeFood, lookupBarcode } from "./ai.js";
 import { state, saveEntry, emit } from "./store.js";
-import { uid, haptic, todayKey, dateOf } from "./util.js";
+import { uid, haptic, todayKey, dateOf, mealFor } from "./util.js";
 import { openAmountSheet } from "./flows.js";
 
-const cam = { stream: null, mode: "scan", torch: false, scanning: false, timer: 0, busy: false };
+const cam = { stream: null, mode: "scan", torch: false, scanning: false, timer: 0, busy: false, status: "off" };
 
 const HINTS = {
   scan: "",
@@ -32,6 +33,14 @@ export function initCamera() {
   $("#cam-torch").addEventListener("click", toggleTorch);
   $("#cam-gallery").addEventListener("click", () => $("#file-gallery").click());
   $("#cam-fallback-btn").addEventListener("click", () => $("#file-camera").click());
+  // iOS stops the camera when the app goes to the background; bring it back on return.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && $("#camera").classList.contains("open") && cam.status === "live" && !streamLive(cam.stream)) {
+      stopCamera(cam.stream, $("#cam-video"));
+      cam.stream = null;
+      beginStream();
+    }
+  });
   for (const id of ["#file-gallery", "#file-camera"]) {
     $(id).addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
@@ -58,16 +67,25 @@ export async function openCamera(mode = "scan") {
   el.hidden = false;
   el.getBoundingClientRect();
   el.classList.add("open");
+  await beginStream();
+}
+
+async function beginStream() {
+  const el = $("#camera");
+  cam.status = "starting";
   try {
-    cam.stream = await startCamera($("#cam-video"));
-    if (el.hidden) {
+    const stream = await startCamera($("#cam-video"));
+    if (!el.classList.contains("open")) {
       // Closed while the permission prompt was up.
-      stopCamera(cam.stream, $("#cam-video"));
-      cam.stream = null;
+      stopCamera(stream, $("#cam-video"));
+      cam.status = "off";
       return;
     }
+    cam.stream = stream;
+    cam.status = "live";
     if (cam.mode === "barcode") startBarcodeLoop();
   } catch (err) {
+    cam.status = "failed";
     showFallback(err);
   }
 }
@@ -76,6 +94,7 @@ export function closeCamera() {
   stopBarcodeLoop();
   stopCamera(cam.stream, $("#cam-video"));
   cam.stream = null;
+  cam.status = "off";
   cam.torch = false;
   $("#cam-torch").classList.remove("on");
   const el = $("#camera");
@@ -119,8 +138,13 @@ function flash() {
 async function onShutter() {
   if (cam.busy) return;
   const video = $("#cam-video");
-  if (!cam.stream || !video.videoWidth) {
+  // Only hand over to the phone's camera app when the in-app camera truly can't run.
+  if (cam.status === "failed") {
     $("#file-camera").click();
+    return;
+  }
+  if (!cam.stream || !video.videoWidth) {
+    toast("Starting the camera…", 1500);
     return;
   }
   cam.busy = true;
@@ -236,6 +260,7 @@ export function newEntry(fields) {
     servings: 1,
     items: [],
     healthScore: null,
+    meal: mealFor(time),
     photo: null,
     source: "scan",
     status: "pending",

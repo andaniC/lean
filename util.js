@@ -47,3 +47,18 @@ export const isStandalone = () =>
 export const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 export const isMobile = () => isIOS() || /android/i.test(navigator.userAgent);
+
+export const MEALS = ["breakfast", "lunch", "dinner", "snack"];
+export const MEAL_LABEL = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
+
+/** Default meal from the time of day. */
+export function mealFor(ts) {
+  const d = new Date(ts);
+  const h = d.getHours() + d.getMinutes() / 60;
+  if (h >= 5 && h < 11) return "breakfast";
+  if (h >= 11 && h < 15) return "lunch";
+  if (h >= 17 && h < 22) return "dinner";
+  return "snack";
+}
+
+export const clock = (ts) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
