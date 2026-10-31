@@ -62,7 +62,7 @@ function renderSummary() {
     const rem = g[key] - t[key];
     animateNumber($(`#${key}-num`), eaten ? round(t[key]) : Math.abs(round(rem)), "g");
     $(`#${key}-label`).textContent = eaten ? `${name} eaten` : rem >= 0 ? `${name} left` : `${name} over`;
-    setRing($(`#${key}-ring`), g[key] ? t[key] / g[key] : 0, 13.5);
+    setRing($(`#${key}-ring`), g[key] ? t[key] / g[key] : 0, 12, `<b class="ring-letter">${name[0]}</b>`);
   }
   $("#code-banner").hidden = !!state.settings.accessCode;
 }
