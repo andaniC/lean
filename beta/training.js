@@ -318,7 +318,7 @@ export function openSessionDetail(w, { onRepeat, onDelete }) {
           (e) => `
         <div class="plan-ex">
           <img src="${gif(e.id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-          <div><b>${esc(e.name)}</b><span>${e.sets.length} sets · ${esc(setsText(e.sets))}</span></div>
+          <div><b>${esc(e.name)}</b><span>${e.sets.length} set${e.sets.length === 1 ? "" : "s"} · ${esc(setsText(e.sets))}</span></div>
         </div>`
         )
         .join("")}
