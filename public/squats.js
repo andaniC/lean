@@ -210,7 +210,7 @@ export async function openSquatCounter(onFinish) {
     return;
   }
   if (!el.classList.contains("open")) return;
-  setFeedback("Prop your phone up and step back until your whole body is in view");
+  setFeedback("Prop your phone up facing you and step back until your whole body is in view");
   loop(landmarker);
 }
 
@@ -239,7 +239,7 @@ function loop(landmarker) {
     const legs = lm ? readLegs(lm, w, h) : null;
     if (!legs) {
       draw(ctx, lm, w, h, false);
-      setFeedback("Step back so your hips, knees and feet are all in view");
+      setFeedback("Face the phone and step back so your hips, knees and feet are in view");
       return;
     }
     // Learn her standing hip height while she's upright.

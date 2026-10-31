@@ -202,7 +202,7 @@ export function openExerciseSheet(base, existing) {
       ${last ? `<div class="last-time">Last time: ${esc(last.map((s) => `${s.reps}${s.kg ? ` × ${round1(s.kg)} kg` : ""}`).join(", "))}. Try one more rep or a little more weight.</div>` : ""}
       ${
         canCount(base)
-          ? `<button class="count-btn press" data-count><span class="ic">${icons.camera}</span><span><b>Count reps with camera</b><small>Prop your phone up and squat. AI counts and checks depth.</small></span></button>`
+          ? `<button class="count-btn press" data-count><span class="ic">${icons.camera}</span><span><b>Count reps with camera</b><small>Prop your phone up facing you and squat. AI counts and checks depth.</small></span></button>`
           : ""
       }
       <div class="sets-head"><span>Set</span><span>Reps</span><span>Weight (kg)</span><span></span></div>
