@@ -14,7 +14,7 @@ import {
   currentWeight,
 } from "./store.js";
 import { openCamera, newEntry, runAnalysis, startTextAnalysis, photoBase64 } from "./capture.js";
-import { computePlan } from "./plan.js";
+import { computePlan, direction } from "./plan.js";
 import { esc, round, round1, num, uid, todayKey, timeLabel, clamp, haptic, pad, dateOf, mealFor, MEALS, MEAL_LABEL } from "./util.js";
 
 const closeBtn = `<button class="round-btn press" data-close aria-label="Close" data-icon="close"></button>`;
@@ -497,7 +497,7 @@ export function openWeightSheet() {
 
 // ------------------------------------------------------------------ settings
 
-const GOAL_LABEL = { lose: "Lose weight", maintain: "Maintain weight", gain: "Gain weight" };
+const GOAL_LABEL = { lose: "Lose weight", maintain: "Maintain weight", gain: "Gain weight", glutes: "Grow glutes" };
 
 export function openSettings({ onRedoOnboarding } = {}) {
   const s = state.settings;
@@ -510,7 +510,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
       <div class="settings">
         <div class="profile-card">
           <div class="initial">${esc(initial)}</div>
-          <div><b>${esc(s.name || "You")}</b><span>${GOAL_LABEL[p.goal]}${p.goal !== "maintain" ? ` · ${p.pace} kg/week` : ""}</span></div>
+          <div><b>${esc(s.name || "You")}</b><span>${GOAL_LABEL[p.goal]}${direction(p) !== "maintain" ? ` · ${p.pace} kg/week` : ""}</span></div>
         </div>
 
         <section>
@@ -531,6 +531,9 @@ export function openSettings({ onRedoOnboarding } = {}) {
             <div class="row"><span class="row-label">Name</span><input data-p="name" value="${esc(s.name)}" style="width:150px" autocomplete="off"></div>
             <div class="row"><span class="row-label">Goal</span><select data-p="goal">
               ${Object.entries(GOAL_LABEL).map(([k, v]) => `<option value="${k}" ${p.goal === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+            <div class="row" data-glutes-row ${p.goal === "glutes" ? "" : "hidden"}><span class="row-label">Glute approach</span><select data-p="glutes">
+              <option value="lean" ${p.glutes !== "bulk" ? "selected" : ""}>Stay lean</option>
+              <option value="bulk" ${p.glutes === "bulk" ? "selected" : ""}>Build faster</option></select></div>
             <div class="row"><span class="row-label">Current weight (kg)</span><input type="number" inputmode="decimal" data-p="weight" value="${round1(currentWeight())}"></div>
             <div class="row"><span class="row-label">Goal weight (kg)</span><input type="number" inputmode="decimal" data-p="targetWeight" value="${p.targetWeight}"></div>
             <div class="row"><span class="row-label">Pace (kg/week)</span><input type="number" inputmode="decimal" step="0.1" data-p="pace" value="${p.pace}"></div>
@@ -571,11 +574,34 @@ export function openSettings({ onRedoOnboarding } = {}) {
           updateSettings({ goals: { [i.dataset.goal]: v } });
         })
       );
+      const recalc = (message) => {
+        const plan = computePlan({ ...state.settings.profile, weight: currentWeight() });
+        updateSettings({ goals: { calories: plan.calories, protein: plan.protein, carbs: plan.carbs, fat: plan.fat, water: plan.water } });
+        for (const k of ["calories", "protein", "carbs", "fat", "water"]) $(`[data-goal="${k}"]`, sheet).value = plan[k];
+        toast(message ?? `New target: ${plan.calories} calories a day`);
+        return plan;
+      };
       $$("[data-p]", sheet).forEach((i) =>
         i.addEventListener("change", async () => {
           const k = i.dataset.p;
           if (k === "name") return updateSettings({ name: i.value.trim() });
-          if (["goal", "sex", "workouts"].includes(k)) return updateSettings({ profile: { [k]: i.value } });
+          if (k === "goal" || k === "glutes") {
+            const profile = { [k]: i.value };
+            // Moving towards a weight needs a target on the right side of the current weight.
+            const next = { ...state.settings.profile, ...profile };
+            const w = currentWeight();
+            if (direction(next) === "lose" && next.targetWeight >= w) profile.targetWeight = Math.max(30, round1(w - 5));
+            if (direction(next) === "gain" && next.targetWeight <= w) profile.targetWeight = round1(w + (next.goal === "glutes" ? 3 : 5));
+            if (next.goal === "glutes" && direction(next) === "gain" && next.pace > 0.3) profile.pace = 0.2;
+            if (profile.targetWeight) $('[data-p="targetWeight"]', sheet).value = profile.targetWeight;
+            if (profile.pace) $('[data-p="pace"]', sheet).value = profile.pace;
+            $("[data-glutes-row]", sheet).hidden = next.goal !== "glutes";
+            updateSettings({ profile });
+            const plan = recalc();
+            toast(`Targets updated for ${GOAL_LABEL[next.goal].toLowerCase()}: ${plan.calories} cal, ${plan.protein} g protein`);
+            return;
+          }
+          if (["sex", "workouts"].includes(k)) return updateSettings({ profile: { [k]: i.value } });
           const v = num(i.value, state.settings.profile[k]);
           i.value = v;
           if (k === "weight") {
@@ -583,12 +609,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
           } else updateSettings({ profile: { [k]: v } });
         })
       );
-      $("[data-recalc]", sheet).addEventListener("click", () => {
-        const plan = computePlan({ ...state.settings.profile, weight: currentWeight() });
-        updateSettings({ goals: { calories: plan.calories, protein: plan.protein, carbs: plan.carbs, fat: plan.fat, water: plan.water } });
-        for (const k of ["calories", "protein", "carbs", "fat", "water"]) $(`[data-goal="${k}"]`, sheet).value = plan[k];
-        toast(`New target: ${plan.calories} calories a day`);
-      });
+      $("[data-recalc]", sheet).addEventListener("click", () => recalc());
 
       const status = $("[data-status]", sheet);
       const codeInput = $("[data-code]", sheet);

@@ -2,12 +2,12 @@
 import { $, $$, wheel, range, ringMarkup, hydrateIcons, fitInput } from "./ui.js";
 import { icons } from "./icons.js";
 import { state, updateSettings, saveWeight } from "./store.js";
-import { computePlan, goalDate } from "./plan.js";
+import { computePlan, goalDate, direction } from "./plan.js";
 import { checkConnection } from "./ai.js";
 import { esc, longDate, round1, uid, todayKey, sleep, isIOS, isStandalone, isMobile, haptic } from "./util.js";
 
-const ORDER = ["welcome", "name", "goal", "sex", "age", "body", "workouts", "target", "pace", "wants", "building", "plan", "code"];
-const QUESTIONS = ["name", "goal", "sex", "age", "body", "workouts", "target", "pace", "wants"];
+const ORDER = ["welcome", "name", "goal", "glutes", "sex", "age", "body", "workouts", "target", "pace", "wants", "building", "plan", "code"];
+const QUESTIONS = ["name", "goal", "glutes", "sex", "age", "body", "workouts", "target", "pace", "wants"];
 
 let root;
 let stage;
@@ -57,7 +57,8 @@ export function startOnboarding(onDone, { fromSettings = false } = {}) {
 }
 
 function skip(step) {
-  if ((step === "target" || step === "pace") && a.goal === "maintain") return true;
+  if (step === "glutes" && a.goal !== "glutes") return true;
+  if ((step === "target" || step === "pace") && direction(a) === "maintain") return true;
   if (step === "code" && a.codeOk) return true;
   return false;
 }
@@ -137,7 +138,19 @@ const option = (key, value, label, emoji, sub = "") =>
   `<button class="option ${(Array.isArray(a[key]) ? a[key].includes(value) : a[key] === value) ? "selected" : ""}" data-v="${value}">
      ${emoji ? `<span class="emoji">${emoji}</span>` : ""}<span>${label}${sub ? `<small>${sub}</small>` : ""}</span></button>`;
 
-const goalWord = () => (a.goal === "gain" ? "gain" : "lose");
+const goalWord = () => (direction(a) === "gain" ? "gain" : "lose");
+const gaining = () => direction(a) === "gain";
+
+export const gluteTips = (protein) => `
+  <div class="plan-box glute-box">
+    <h3>🍑 Your glute plan</h3>
+    <ul>
+      <li>Eat <b>${protein} g of protein</b> every day, spread over your meals</li>
+      <li>Train glutes 2–3 times a week: hip thrusts, Romanian deadlifts, squats and lunges</li>
+      <li>Add a little weight or a few reps each week so they keep growing</li>
+      <li>Sleep 7–9 hours; muscle is built while you recover</li>
+    </ul>
+  </div>`;
 
 const STEPS = {
   install: () => {
@@ -204,8 +217,18 @@ const STEPS = {
     body: `<div class="options" data-key="goal">
       ${option("goal", "lose", "Lose weight", "🔥")}
       ${option("goal", "maintain", "Maintain", "⚖️")}
-      ${option("goal", "gain", "Gain weight", "💪")}</div>`,
+      ${option("goal", "gain", "Gain weight", "💪")}
+      ${option("goal", "glutes", "Grow glutes", "🍑", "Build a stronger, rounder booty")}</div>`,
     valid: () => !!a.goal,
+  }),
+
+  glutes: () => ({
+    title: "How do you want to grow them?",
+    sub: "Glutes grow from training plus enough protein and food. Pick what suits you.",
+    body: `<div class="options" data-key="glutes">
+      ${option("glutes", "lean", "Stay lean while building", "✨", "Eat at maintenance with high protein")}
+      ${option("glutes", "bulk", "Build faster", "📈", "Small calorie surplus, about 0.2 kg a week")}</div>`,
+    valid: () => !!a.glutes,
   }),
 
   sex: () => ({
@@ -242,8 +265,8 @@ const STEPS = {
         onChange: (v) => {
           a.weight = v;
           // Keep the goal weight sensible as the current weight changes.
-          if (a.goal === "lose" && a.targetWeight >= v) a.targetWeight = Math.max(30, v - 5);
-          if (a.goal === "gain" && a.targetWeight <= v) a.targetWeight = v + 5;
+          if (direction(a) === "lose" && a.targetWeight >= v) a.targetWeight = Math.max(30, v - 5);
+          if (gaining() && a.targetWeight <= v) a.targetWeight = v + (a.goal === "glutes" ? 3 : 5);
         },
       });
     },
@@ -260,23 +283,23 @@ const STEPS = {
   }),
 
   target: () => {
-    if (a.goal === "lose" && a.targetWeight >= a.weight) a.targetWeight = Math.max(30, a.weight - 5);
-    if (a.goal === "gain" && a.targetWeight <= a.weight) a.targetWeight = a.weight + 5;
+    if (direction(a) === "lose" && a.targetWeight >= a.weight) a.targetWeight = Math.max(30, a.weight - 5);
+    if (gaining() && a.targetWeight <= a.weight) a.targetWeight = a.weight + (a.goal === "glutes" ? 3 : 5);
     return {
       title: "What is your desired weight?",
-      sub: a.goal === "gain" ? "Gain weight" : "Lose weight",
+      sub: a.goal === "glutes" ? "Grow glutes" : gaining() ? "Gain weight" : "Lose weight",
       body: `
         <div class="big-readout"><span data-readout>${a.targetWeight}</span><small> kg</small></div>
         <div class="wheels" style="margin-top:14px"><div class="wheel-col" data-w="t"></div></div>
         <div class="pace-note" data-note></div>`,
-      valid: () => (a.goal === "lose" ? a.targetWeight < a.weight : a.targetWeight > a.weight),
+      valid: () => (gaining() ? a.targetWeight > a.weight : a.targetWeight < a.weight),
       mount(el, refresh) {
         const note = () => {
           const diff = round1(Math.abs(a.weight - a.targetWeight));
-          const ok = a.goal === "lose" ? a.targetWeight < a.weight : a.targetWeight > a.weight;
+          const ok = gaining() ? a.targetWeight > a.weight : a.targetWeight < a.weight;
           $("[data-note]", el).textContent = ok
-            ? `${a.goal === "gain" ? "Gaining" : "Losing"} ${diff} kg is a realistic target. You've got this!`
-            : `Pick a weight ${a.goal === "gain" ? "above" : "below"} your current ${a.weight} kg.`;
+            ? `${gaining() ? "Gaining" : "Losing"} ${diff} kg is a realistic target. You've got this!`
+            : `Pick a weight ${gaining() ? "above" : "below"} your current ${a.weight} kg.`;
           $("[data-readout]", el).textContent = a.targetWeight;
         };
         note();
@@ -295,16 +318,17 @@ const STEPS = {
   },
 
   pace: () => {
-    const max = a.goal === "gain" ? 0.5 : 1;
-    if (a.pace > max) a.pace = a.goal === "gain" ? 0.3 : 0.5;
+    const max = gaining() ? 0.5 : 1;
+    const recommended = a.goal === "glutes" ? 0.2 : gaining() ? 0.3 : 0.5;
+    if (a.pace > max || (a.goal === "glutes" && a.pace > 0.3)) a.pace = recommended;
     return {
       title: "How fast do you want to reach your goal?",
-      sub: `${a.goal === "gain" ? "Gain" : "Lose"} weight speed per week`,
+      sub: `${gaining() ? "Gain" : "Lose"} weight speed per week`,
       body: `
         <div class="big-readout"><span data-readout>${a.pace}</span><small> kg</small></div>
         <div class="pace-icons"><span>🐢</span><span>🐇</span><span>🐆</span></div>
         <input class="range" type="range" min="0.1" max="${max}" step="0.1" value="${a.pace}">
-        <div class="pace-labels"><span>0.1 kg</span><span>${a.goal === "gain" ? 0.3 : 0.5} kg</span><span>${max} kg</span></div>
+        <div class="pace-labels"><span>0.1 kg</span><span>${recommended} kg</span><span>${max} kg</span></div>
         <div class="pace-note" data-note></div>`,
       mount(el) {
         const input = $(".range", el);
@@ -391,7 +415,9 @@ const STEPS = {
     const date = goalDate(a);
     const diff = round1(Math.abs(a.weight - a.targetWeight));
     const headline =
-      a.goal === "maintain"
+      a.goal === "glutes" && direction(a) === "maintain"
+        ? `<p class="ready-sub">Build your glutes at:</p><div class="ready-pill">${a.weight} kg, staying lean</div>`
+        : direction(a) === "maintain"
         ? `<p class="ready-sub">You should maintain:</p><div class="ready-pill">${a.weight} kg</div>`
         : `<p class="ready-sub">You should ${goalWord()}:</p><div class="ready-pill">${diff} kg by ${longDate(date)}</div>`;
     const item = (key, label, color, unit, pct) => `
@@ -410,12 +436,13 @@ const STEPS = {
           <h3>Daily recommendation</h3>
           <p>You can edit this any time</p>
           <div class="plan-grid">
-            ${item("calories", "Calories", "var(--ink)", "", 0.72)}
+            ${item("calories", "Calories", "var(--flame)", "", 0.72)}
             ${item("carbs", "Carbs", "var(--carbs)", "g", 0.6)}
             ${item("protein", "Protein", "var(--protein)", "g", 0.55)}
             ${item("fat", "Fats", "var(--fat)", "g", 0.45)}
           </div>
-        </div>`,
+        </div>
+        ${a.goal === "glutes" ? gluteTips(a.plan.protein) : ""}`,
       cta: "Let's get started!",
       mount(el) {
         $(".ob-top", root).style.visibility = "hidden";
@@ -442,7 +469,8 @@ const STEPS = {
           age: a.age,
           height: a.height,
           weight: a.weight,
-          targetWeight: a.goal === "maintain" ? a.weight : a.targetWeight,
+          targetWeight: direction(a) === "maintain" ? a.weight : a.targetWeight,
+          glutes: a.glutes,
           pace: a.pace,
           workouts: a.workouts,
           wants: a.wants,
