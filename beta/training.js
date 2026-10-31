@@ -6,6 +6,7 @@ import { icons } from "./icons.js";
 import { GLUTE_EXERCISES } from "./exercise-data.js";
 import { state, saveWorkout, currentWeight, emit } from "./store.js";
 import { openSquatCounter, preloadTracker } from "./squats.js";
+import { openDemo } from "./demo.js";
 import { esc, round, round1, num, uid, todayKey, dateOf, haptic, clamp } from "./util.js";
 import { STORAGE } from "./config.js";
 
@@ -118,9 +119,9 @@ function openSession(session, pickExercise) {
                 return `
           <div class="s-ex ${done && done === e.sets.length ? "complete" : ""}">
             <div class="s-ex-head">
-              <img src="${gif(e.id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-              <div>
-                <b>${esc(e.name)}</b>
+              <img src="${gif(e.id)}" alt="How to do ${esc(e.name)}" loading="lazy" data-demo="${ei}" onerror="this.style.visibility='hidden'">
+              <div data-demo="${ei}">
+                <b>${esc(e.name)} <span class="how-link">How to</span></b>
                 <span>${e.last ? `Last time: ${esc(e.last)}` : esc(e.note || "First time: go until 1–2 good reps are left")}</span>
               </div>
               <button class="s-remove" data-remove="${ei}" aria-label="Remove exercise">${icons.close}</button>
@@ -210,6 +211,11 @@ function openSession(session, pickExercise) {
       });
 
       list.addEventListener("click", async (ev) => {
+        const demo = ev.target.closest("[data-demo]");
+        if (demo) {
+          const e = session.exercises[Number(demo.dataset.demo)];
+          return openDemo(exById(e.id) ?? { id: e.id, name: e.name });
+        }
         const check = ev.target.closest("[data-check]");
         if (check) {
           const [ei, si] = check.dataset.check.split(":").map(Number);
