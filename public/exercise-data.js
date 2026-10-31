@@ -1,33 +1,15 @@
-// Curated glute library. Demo GIFs and instructions come from the free ExerciseDB API (oss.exercisedb.dev).
+// Home glute library: bodyweight and resistance-band exercises only, squats on both legs.
+// Every demo GIF was checked by eye (ExerciseDB labels aren't always right).
+// Demo GIFs and instructions come from the free ExerciseDB API (oss.exercisedb.dev).
 export const GLUTE_EXERCISES = [
- {
-  "id": "qg2PGl6",
-  "name": "Barbell Hip Thrust",
-  "group": "Bridges & thrusts",
-  "met": 5.0,
-  "equipment": "barbell",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "core"
-  ],
-  "steps": [
-   "Begin by sitting on the edge of a bench with your upper back resting against it and your feet planted, about hip width.",
-   "Set a barbell across your hips, holding it securely with both hands.",
-   "Plant the feet and keep the ribs from flaring as the hips prepare to rise.",
-   "Press through the feet and lift your hips until your torso and thighs line up.",
-   "Stop when the hips line up with the torso; do not arch higher through the lower back.",
-   "Lower the hips steadily and keep the feet planted for the next lift."
-  ]
- },
  {
   "id": "u0cNiij",
   "name": "Glute Bridge",
-  "group": "Bridges & thrusts",
+  "group": "Bridges",
   "met": 3.5,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
    "glutes",
    "hamstrings",
@@ -43,12 +25,36 @@ export const GLUTE_EXERCISES = [
   ]
  },
  {
-  "id": "rmEukuS",
-  "name": "Single-Leg Glute Bridge",
-  "group": "Bridges & thrusts",
+  "id": "aWedzZX",
+  "name": "Feet-Up Glute Bridge",
+  "group": "Bridges",
   "met": 3.5,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
+  "targets": [
+   "glutes",
+   "hamstrings",
+   "core"
+  ],
+  "steps": [
+   "Take a seat on the edge of a bench with your back against it and your feet planted.",
+   "Set your hands on the bench beside your hips for support.",
+   "Plant the feet and keep the ribs from flaring as the hips prepare to rise.",
+   "Press through the feet and lift your hips until your torso and thighs line up.",
+   "Stop when the hips line up with the torso; do not arch higher through the lower back.",
+   "Lower the hips steadily and keep the feet planted for the next lift."
+  ],
+  "note": "Feet on the sofa or a chair"
+ },
+ {
+  "id": "E4R8Hz1",
+  "name": "Banded Glute Bridge",
+  "group": "Bridges",
+  "met": 3.5,
+  "equipment": "resistance band",
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "hamstrings",
@@ -56,20 +62,21 @@ export const GLUTE_EXERCISES = [
   ],
   "steps": [
    "Settle onto your back with your knees bent and feet planted.",
-   "Reach one leg straight out in front of you.",
-   "Settle into the starting position and take an easy breath before moving deeper.",
-   "Ease toward the stretch until you feel mild tension; keep breathing and avoid bouncing.",
-   "Stay in a mild stretch rather than pulling farther with momentum.",
-   "Hold the position with steady breathing, then release gently; repeat on the other side if needed."
+   "Set a resistance band just above your knees.",
+   "Plant the feet and keep the ribs from flaring as the hips prepare to rise.",
+   "Press through the feet and lift your hips until your torso and thighs line up.",
+   "Control the band on the way back instead of letting it snap you into position.",
+   "Lower the hips steadily and keep the feet planted for the next lift."
   ]
  },
  {
   "id": "GibBPPg",
   "name": "Glute Bridge March",
-  "group": "Bridges & thrusts",
+  "group": "Bridges",
   "met": 3.5,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
    "glutes",
    "hamstrings",
@@ -87,10 +94,11 @@ export const GLUTE_EXERCISES = [
  {
   "id": "Pjbc0Kt",
   "name": "Banded Kneeling Hip Thrust",
-  "group": "Bridges & thrusts",
+  "group": "Bridges",
   "met": 3.5,
   "equipment": "resistance band",
-  "bodyweight": false,
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "hamstrings",
@@ -103,128 +111,25 @@ export const GLUTE_EXERCISES = [
    "Press through the feet and lift your hips until your torso and thighs line up.",
    "Control the band on the way back instead of letting it snap you into position.",
    "Lower the hips steadily and keep the feet planted for the next lift."
-  ]
- },
- {
-  "id": "rR0LJzx",
-  "name": "Dumbbell Romanian Deadlift",
-  "group": "Hinges",
-  "met": 5.0,
-  "equipment": "dumbbell",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "erector spinae"
   ],
-  "steps": [
-   "Stand and set your feet about shoulder width, holding a dumbbell in each hand with palms facing down.",
-   "With your back straight and your core engaged, hinge at the hips and lower the dumbbells toward the ground, letting your knees to bend slightly.",
-   "Unlock the knees and brace the abdomen before moving the hips back.",
-   "Send your hips back with a soft knee bend, lowering the load close to your legs until the hamstrings stretch.",
-   "Keep the weight close to the legs and stop when the back would begin to round.",
-   "Drive the hips forward to stand tall without leaning back at the top."
-  ]
+  "note": "Loop the band around something heavy"
  },
  {
-  "id": "wQ2c4XD",
-  "name": "Barbell Romanian Deadlift",
-  "group": "Hinges",
-  "met": 5.0,
-  "equipment": "barbell",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "erector spinae"
-  ],
-  "steps": [
-   "Stand and set your feet about shoulder width and your toes pointing forward.",
-   "Take hold of the barbell with palms facing down, hands just beyond shoulder width.",
-   "Unlock the knees and brace the abdomen before moving the hips back.",
-   "Send your hips back with a soft knee bend, lowering the load close to your legs until the hamstrings stretch.",
-   "Keep the weight close to the legs and stop when the back would begin to round.",
-   "Drive the hips forward to stand tall without leaning back at the top."
-  ]
- },
- {
-  "id": "KgI0tqW",
-  "name": "Sumo Deadlift",
-  "group": "Hinges",
-  "met": 6.0,
-  "equipment": "barbell",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "quadriceps"
-  ],
-  "steps": [
-   "Stand and set your feet wider than about shoulder width, toes pointing outwards.",
-   "Set a barbell on the ground in front of you, centered between your feet.",
-   "Unlock the knees and brace the abdomen before moving the hips back.",
-   "Push the hips back while keeping the load close and the spine steady.",
-   "Keep the weight close to the legs and stop when the back would begin to round.",
-   "Drive the hips forward to stand tall without leaning back at the top."
-  ]
- },
- {
-  "id": "UHJlbu3",
-  "name": "Kettlebell Swing",
-  "group": "Hinges",
-  "met": 9.8,
-  "equipment": "kettlebell",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "core"
-  ],
-  "steps": [
-   "Stand and set your feet about shoulder width, toes pointed slightly outward.",
-   "Take hold of the kettlebell with both hands ahead of your body, arms extended.",
-   "Set the shoulders and let the weight move back between the legs as the hips hinge.",
-   "Hinge back, then drive the hips forward to send the weight up; let the arms guide it.",
-   "Let the hips, not the shoulders, provide the power.",
-   "Let the weight fall naturally and hinge again for the next swing."
-  ]
- },
- {
-  "id": "kuMiR2T",
-  "name": "Banded Romanian Deadlift",
-  "group": "Hinges",
-  "met": 4.0,
-  "equipment": "resistance band",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "erector spinae"
-  ],
-  "steps": [
-   "Stand and set your feet about shoulder width and place the band around your ankles.",
-   "Take hold of the band with both hands ahead of your thighs, palms facing your body.",
-   "Unlock the knees and brace the abdomen before moving the hips back.",
-   "Push the hips back while keeping the load close and the spine steady.",
-   "Control the band on the way back instead of letting it snap you into position.",
-   "Drive the hips forward to stand tall without leaning back at the top."
-  ]
- },
- {
-  "id": "6YUfHPL",
+  "id": "75Bgtjy",
   "name": "Bodyweight Squat",
-  "group": "Squats & lunges",
+  "group": "Squats",
   "met": 5.0,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
+   "abdominals",
    "quadriceps",
-   "hamstrings",
    "glutes"
   ],
   "steps": [
-   "Stand and set your feet about shoulder width.",
-   "Before moving, lower your body by bending your knees and pushing your hips back as if sitting on a chair.",
+   "Stand and set your feet about shoulder width, toes pointing slightly outward.",
+   "Before moving, lower your body down by bending your knees and pushing your hips back as if you were sitting on a chair.",
    "Brace the abdomen and spread pressure across the whole foot.",
    "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
    "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
@@ -233,98 +138,82 @@ export const GLUTE_EXERCISES = [
   "counter": "squat"
  },
  {
-  "id": "ZA8b5hc",
-  "name": "Goblet Squat",
-  "group": "Squats & lunges",
+  "id": "TUZLh71",
+  "name": "Banded Squat",
+  "group": "Squats",
   "met": 5.0,
-  "equipment": "kettlebell",
-  "bodyweight": false,
+  "equipment": "resistance band",
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "quadriceps",
    "hamstrings"
   ],
   "steps": [
-   "Stand and set your feet about shoulder width, holding a kettlebell close to your chest with both hands.",
-   "With your chest up and core engaged, lower your body down into a squat position by bending at the knees and hips.",
+   "Stand and set your feet about shoulder width, with the band placed just above your knees.",
+   "With your chest up and core engaged, push your hips back and bend your knees to lower into a squat position.",
    "Brace the abdomen and spread pressure across the whole foot.",
    "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
-   "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
+   "Control the band on the way back instead of letting it snap you into position.",
    "Stand fully, reset your footing and breathing, then begin the next descent."
   ],
   "counter": "squat"
  },
  {
-  "id": "dzz6BiV",
-  "name": "Sumo Squat",
-  "group": "Squats & lunges",
-  "met": 5.0,
-  "equipment": "smith machine",
-  "bodyweight": false,
-  "targets": [
-   "glutes",
-   "quadriceps",
-   "hamstrings"
-  ],
-  "steps": [
-   "Prepare the smith machine with the barbell at hip height.",
-   "Stand and set your feet wider than about shoulder width, toes pointing outwards.",
-   "Brace the abdomen and spread pressure across the whole foot.",
-   "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
-   "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
-   "Stand fully, reset your footing and breathing, then begin the next descent."
-  ],
-  "counter": "squat"
- },
- {
-  "id": "qx4fgX7",
-  "name": "Bulgarian Split Squat",
-  "group": "Squats & lunges",
-  "met": 5.0,
-  "equipment": "dumbbell",
-  "bodyweight": false,
-  "targets": [
-   "quadriceps",
-   "glutes",
-   "hamstrings"
-  ],
-  "steps": [
-   "Stand and set your feet about shoulder width, holding a dumbbell in each hand.",
-   "Step forward with one foot and position your feet so that your front foot is flat on the ground and your back foot is elevated on a bench or step.",
-   "Brace the abdomen and spread pressure across the whole foot.",
-   "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
-   "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
-   "Stand fully, reset your footing and breathing, then begin the next descent."
-  ]
- },
- {
-  "id": "9E25EOx",
-  "name": "Split Squat",
-  "group": "Squats & lunges",
+  "id": "QChZi3x",
+  "name": "Squat to Overhead Reach",
+  "group": "Squats",
   "met": 5.0,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
    "quadriceps",
    "glutes",
    "hamstrings"
   ],
   "steps": [
-   "Stand and set your feet about shoulder width.",
-   "Step forward with one foot and place it about two feet in front of the other foot.",
+   "Stand and set your feet about shoulder width and toes slightly turned out.",
+   "Before moving, lower your body down into a squat position by bending your knees and pushing your hips back.",
    "Brace the abdomen and spread pressure across the whole foot.",
    "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
    "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
    "Stand fully, reset your footing and breathing, then begin the next descent."
-  ]
+  ],
+  "counter": "squat"
  },
  {
-  "id": "gUjqdei",
-  "name": "Curtsy Lunge",
-  "group": "Squats & lunges",
-  "met": 5.0,
+  "id": "b63ZzGe",
+  "name": "Deep Squat (holding on)",
+  "group": "Squats",
+  "met": 4.0,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
+  "targets": [
+   "glutes",
+   "quadriceps",
+   "hamstrings"
+  ],
+  "steps": [
+   "Stand and set your feet about shoulder width, toes pointing slightly outward.",
+   "Use a stable support, such as a chair or wall, for balance.",
+   "Brace the abdomen and spread pressure across the whole foot.",
+   "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
+   "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
+   "Stand fully, reset your footing and breathing, then begin the next descent."
+  ],
+  "counter": "squat"
+ },
+ {
+  "id": "LIlE5Tn",
+  "name": "Jump Squat",
+  "group": "Squats",
+  "met": 8.0,
+  "equipment": "bodyweight",
+  "bodyweight": true,
+  "band": false,
   "targets": [
    "glutes",
    "quadriceps",
@@ -332,20 +221,22 @@ export const GLUTE_EXERCISES = [
   ],
   "steps": [
    "Stand and set your feet about shoulder width.",
-   "Step diagonally behind and across your body with your right foot, crossing it behind your left leg.",
+   "Before moving, lower your body into a squat position by bending your knees and pushing your hips back.",
    "Brace the abdomen and spread pressure across the whole foot.",
    "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
    "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
    "Stand fully, reset your footing and breathing, then begin the next descent."
-  ]
+  ],
+  "counter": "squat"
  },
  {
   "id": "IZVHb27",
   "name": "Walking Lunge",
-  "group": "Squats & lunges",
+  "group": "Lunges & step-ups",
   "met": 5.0,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
    "glutes",
    "quadriceps",
@@ -361,54 +252,124 @@ export const GLUTE_EXERCISES = [
   ]
  },
  {
-  "id": "aXtJhlg",
-  "name": "Dumbbell Step-Up",
-  "group": "Squats & lunges",
+  "id": "kMzUs9Y",
+  "name": "Forward Lunge",
+  "group": "Lunges & step-ups",
   "met": 5.0,
-  "equipment": "dumbbell",
-  "bodyweight": false,
+  "equipment": "bodyweight",
+  "bodyweight": true,
+  "band": false,
   "targets": [
    "glutes",
    "quadriceps",
    "hamstrings"
   ],
   "steps": [
-   "Take your place in front of a bench or step with a dumbbell in each hand, palms facing your body.",
-   "Set your right foot on the bench or step, ensuring your entire foot is in contact with the surface.",
-   "Put the lead foot fully on the platform before shifting your weight onto it.",
-   "Step onto the platform and drive through the lead foot to stand tall on it.",
+   "Stand and set your feet about hip width and hands on your hips.",
+   "Step wide forward with your right foot, lowering your body into a lunge position.",
+   "Set your stance wide enough to balance before bending either knee.",
+   "Step into the movement and bend both knees, keeping your front foot planted.",
    "Keep the front foot planted and avoid collapsing inward at the knee.",
    "Push through the lead foot to return to the start, then change legs as planned."
   ]
  },
  {
-  "id": "Kpajagk",
-  "name": "Cable Glute Kickback",
-  "group": "Glute isolation",
-  "met": 3.5,
-  "equipment": "cable",
-  "bodyweight": false,
+  "id": "gUjqdei",
+  "name": "Curtsy Lunge",
+  "group": "Lunges & step-ups",
+  "met": 5.0,
+  "equipment": "bodyweight",
+  "bodyweight": true,
+  "band": false,
+  "targets": [
+   "glutes",
+   "quadriceps",
+   "hamstrings"
+  ],
+  "steps": [
+   "Stand and set your feet about shoulder width.",
+   "Step diagonally behind and across your body with your right foot, crossing it behind your left leg.",
+   "Brace the abdomen and spread pressure across the whole foot.",
+   "Bend at the hips and knees to lower, keeping your feet grounded and knees tracking with the toes.",
+   "Drive upward with the chest and hips rising together; keep the knees from collapsing inward.",
+   "Stand fully, reset your footing and breathing, then begin the next descent."
+  ]
+ },
+ {
+  "id": "d5bTEPV",
+  "name": "Banded Step-Up",
+  "group": "Lunges & step-ups",
+  "met": 5.0,
+  "equipment": "resistance band",
+  "bodyweight": true,
+  "band": true,
+  "targets": [
+   "glutes",
+   "quadriceps",
+   "hamstrings"
+  ],
+  "steps": [
+   "Set a band around your thighs, just above your knees.",
+   "Face a step or platform with your feet about hip width.",
+   "Put the lead foot fully on the platform before shifting your weight onto it.",
+   "Step onto the platform and drive through the lead foot to stand tall on it.",
+   "Control the band on the way back instead of letting it snap you into position.",
+   "Push through the lead foot to return to the start, then change legs as planned."
+  ],
+  "note": "Use a stair or sturdy step"
+ },
+ {
+  "id": "kuMiR2T",
+  "name": "Banded Romanian Deadlift",
+  "group": "Hinges",
+  "met": 4.0,
+  "equipment": "resistance band",
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "hamstrings",
-   "quadriceps"
+   "erector spinae"
   ],
   "steps": [
-   "Connect a cable to a low pulley and stand turned away from the machine.",
-   "Set the cable around your ankle and stand with your feet about shoulder width.",
-   "Plant the feet and keep the ribs from flaring as the hips prepare to rise.",
-   "Press through the feet and lift your hips until your torso and thighs line up.",
-   "Stop when the hips line up with the torso; do not arch higher through the lower back.",
-   "Lower the hips steadily and keep the feet planted for the next lift."
+   "Stand and set your feet about shoulder width and place the band around your ankles.",
+   "Take hold of the band with both hands ahead of your thighs, palms facing your body.",
+   "Unlock the knees and brace the abdomen before moving the hips back.",
+   "Push the hips back while keeping the load close and the spine steady.",
+   "Control the band on the way back instead of letting it snap you into position.",
+   "Drive the hips forward to stand tall without leaning back at the top."
+  ]
+ },
+ {
+  "id": "OrETs32",
+  "name": "Reverse Hyper (on the sofa)",
+  "group": "Hinges",
+  "met": 3.5,
+  "equipment": "bodyweight",
+  "bodyweight": true,
+  "band": false,
+  "targets": [
+   "glutes",
+   "hamstrings",
+   "erector spinae"
+  ],
+  "steps": [
+   "Position yourself face down on a flat bench with your hips at the edge and your legs hanging off the bench.",
+   "Use the bench for stability.",
+   "Secure the hips and feet on the support before lifting.",
+   "Raise your torso or legs until they line up with your body, without arching sharply at the lower back.",
+   "Finish in a straight body line, before the lower back overarches.",
+   "Bring the weight or body back to its starting position without rushing."
   ]
  },
  {
   "id": "wSScovH",
   "name": "Banded Glute Kickback",
-  "group": "Glute isolation",
+  "group": "Outer glutes",
   "met": 3.5,
   "equipment": "resistance band",
-  "bodyweight": false,
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "hamstrings",
@@ -424,33 +385,34 @@ export const GLUTE_EXERCISES = [
   ]
  },
  {
-  "id": "CHpahtl",
-  "name": "Hip Abduction Machine",
-  "group": "Glute isolation",
+  "id": "u27Kcdz",
+  "name": "Donkey Kick",
+  "group": "Outer glutes",
   "met": 3.5,
-  "equipment": "leverage machine",
-  "bodyweight": false,
+  "equipment": "bodyweight",
+  "bodyweight": true,
+  "band": false,
   "targets": [
-   "abductors",
    "glutes",
    "hamstrings"
   ],
   "steps": [
-   "Set the seat height so that your knees are at a 90-degree angle.",
-   "Take a seat on the machine with your back against the backrest and your feet on the footrests.",
-   "Square the pelvis before moving the working leg.",
-   "Open the knees or legs against resistance without shifting your torso.",
-   "Move only as far as the pelvis can remain steady.",
-   "Bring the weight or body back to its starting position without rushing."
+   "Take a seat on a bench with your back against the bench and your feet planted.",
+   "Set your hands on the bench for support.",
+   "Plant the feet and keep the ribs from flaring as the hips prepare to rise.",
+   "Press through the feet and lift your hips until your torso and thighs line up.",
+   "Stop when the hips line up with the torso; do not arch higher through the lower back.",
+   "Lower the hips steadily and keep the feet planted for the next lift."
   ]
  },
  {
   "id": "0xDpB4L",
   "name": "Banded Seated Abduction",
-  "group": "Glute isolation",
+  "group": "Outer glutes",
   "met": 3.5,
   "equipment": "resistance band",
-  "bodyweight": false,
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "abductors",
    "glutes",
@@ -468,10 +430,11 @@ export const GLUTE_EXERCISES = [
  {
   "id": "7WaDzyL",
   "name": "Side-Lying Leg Raise",
-  "group": "Glute isolation",
+  "group": "Outer glutes",
   "met": 3.0,
   "equipment": "bodyweight",
   "bodyweight": true,
+  "band": false,
   "targets": [
    "abductors",
    "glutes",
@@ -489,10 +452,11 @@ export const GLUTE_EXERCISES = [
  {
   "id": "O95afRA",
   "name": "Monster Walk",
-  "group": "Glute isolation",
+  "group": "Outer glutes",
   "met": 3.5,
-  "equipment": "bodyweight",
-  "bodyweight": false,
+  "equipment": "resistance band",
+  "bodyweight": true,
+  "band": true,
   "targets": [
    "glutes",
    "hamstrings",
@@ -505,27 +469,6 @@ export const GLUTE_EXERCISES = [
    "Walk at a controlled pace, keeping your shoulders level and your steps even.",
    "Keep steps even and avoid leaning away from the load.",
    "Stop before posture breaks down, set the load down safely, and reset for the next walk."
-  ]
- },
- {
-  "id": "OrETs32",
-  "name": "Reverse Hyperextension",
-  "group": "Glute isolation",
-  "met": 3.5,
-  "equipment": "bodyweight",
-  "bodyweight": true,
-  "targets": [
-   "glutes",
-   "hamstrings",
-   "erector spinae"
-  ],
-  "steps": [
-   "Position yourself face down on a flat bench with your hips at the edge and your legs hanging off the bench.",
-   "Use the bench for stability.",
-   "Secure the hips and feet on the support before lifting.",
-   "Raise your torso or legs until they line up with your body, without arching sharply at the lower back.",
-   "Finish in a straight body line, before the lower back overarches.",
-   "Bring the weight or body back to its starting position without rushing."
   ]
  }
 ];

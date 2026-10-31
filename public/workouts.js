@@ -15,12 +15,12 @@ export const CARDIO = [
   { id: "brisk", name: "Brisk walk", emoji: "👟", met: 4.3 },
   { id: "run", name: "Running", emoji: "🏃‍♀️", met: 9.8 },
   { id: "cycle", name: "Cycling", emoji: "🚴‍♀️", met: 7.5 },
-  { id: "stairs", name: "Stair climber", emoji: "🪜", met: 9 },
+  { id: "stairs", name: "Stairs", emoji: "🪜", met: 8 },
+  { id: "skip", name: "Skipping rope", emoji: "🪢", met: 8.8 },
   { id: "dance", name: "Dance", emoji: "💃", met: 6.5 },
   { id: "pilates", name: "Pilates", emoji: "🧘‍♀️", met: 3.8 },
   { id: "yoga", name: "Yoga", emoji: "🕉️", met: 3 },
   { id: "hiit", name: "HIIT", emoji: "⚡", met: 8 },
-  { id: "swim", name: "Swimming", emoji: "🏊‍♀️", met: 7 },
 ];
 
 // Calories from METs: kcal = MET x body kg x hours. A set is ~4 s per rep plus ~45 s of rest.
@@ -342,7 +342,8 @@ function openLibrary({ onPick } = {}) {
     html: `
       <div class="sheet-head"><h2 class="sheet-title">${onPick ? "Add exercise" : "Exercises"}</h2><button class="round-btn press" data-close aria-label="Close" data-icon="close"></button></div>
       <div class="search-box"><span data-icon="search"></span>
-        <input class="input" type="search" placeholder="Search 1,500 exercises" enterkeyhint="search" autocomplete="off"></div>
+        <input class="input" type="search" placeholder="Search home exercises" enterkeyhint="search" autocomplete="off"></div>
+      <p class="status" style="margin:8px 4px 0">No gym needed: everything here uses just your body or a resistance band.</p>
       <div data-browse>${groups
         .map(
           (g) => `<div class="w-group">${esc(g)}</div>
@@ -393,7 +394,7 @@ function openLibrary({ onPick } = {}) {
         if (!b) return;
         const r = (await loadCatalogue()).find((x) => x[0] === b.dataset.id);
         const curated = GLUTE_EXERCISES.find((x) => x.id === r[0]);
-        const ex = curated ?? { id: r[0], name: r[1], met: 5, bodyweight: r[3] === "bodyweight" };
+        const ex = curated ?? { id: r[0], name: r[1], met: 5, bodyweight: r[3] === "bodyweight", band: r[3] === "resistance band" };
         if (!curated && canCount(ex)) ex.counter = "squat";
         choose(ex);
       });
