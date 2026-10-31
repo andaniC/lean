@@ -395,9 +395,27 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .ring-sm {
-  width: 30px;
-  height: 30px;
-  margin: 12px auto 0;
+  width: 36px;
+  height: 36px;
+  margin: 10px auto 0;
+}
+
+.ring-letter {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ring-sm.protein .ring-letter {
+  color: var(--protein);
+}
+
+.ring-sm.carbs .ring-letter {
+  color: #e08a00;
+}
+
+.ring-sm.fat .ring-letter {
+  color: var(--fat);
 }
 
 .ring-sm.protein .arc {
