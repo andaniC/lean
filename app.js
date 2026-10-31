@@ -466,6 +466,22 @@ async function boot() {
 }
 
 if ("serviceWorker" in navigator) {
+  // When a new version takes over, reload into it, but never in the middle of something.
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) {
+      hadController = true; // first install, not an update
+      return;
+    }
+    const busy = () => document.querySelector(".sheet, .ob") || !$("#camera").hidden;
+    if (!busy()) return location.reload();
+    const onReturn = () => {
+      if (document.visibilityState !== "visible") return;
+      document.removeEventListener("visibilitychange", onReturn);
+      location.reload();
+    };
+    document.addEventListener("visibilitychange", onReturn);
+  });
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
 
