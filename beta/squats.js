@@ -8,10 +8,16 @@ import { haptic, clamp } from "./util.js";
 const MP = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1";
 const MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
 
-// Knee angle (hip-knee-ankle) thresholds in degrees.
-const STANDING = 158;
-const DEPTH = 105; // about thighs parallel
-const GREAT = 92;
+// Depth is scored 0 (standing) .. 1 (thighs parallel) from two cues, whichever shows more:
+// the knee angle (hip-knee-ankle), and how far the hips have dropped toward knee height
+// compared with standing. The second cue keeps side-on and front-on views both reliable.
+const KNEE_STANDING = 160;
+const KNEE_PARALLEL = 110;
+const START = 0.35; // she's going down
+const STOOD_UP = 0.2; // back up
+const COUNTS = 0.85; // close enough to parallel to count
+const GREAT = 1.0; // parallel or deeper
+const IGNORE = 0.45; // smaller dips aren't squat attempts
 
 let landmarkerPromise;
 function getLandmarker() {
@@ -42,31 +48,34 @@ export function preloadTracker() {
   return getLandmarker().catch(() => {});
 }
 
-/** Rep state machine fed with knee angles. Returns "rep", "shallow" or null per update. */
+/** Rep state machine on the depth score. `depth` is smoothed (for phase changes); `raw` is the
+ *  unsmoothed reading, used for the bottom of the rep so slower phones don't miss it.
+ *  Returns "rep", "shallow" or null per update. */
 export function createSquatCounter() {
   let phase = "up";
-  let bottom = 180;
+  let bottom = 0;
   return {
     reps: 0,
     shallow: 0,
     get bottom() {
       return bottom;
     },
-    update(angle) {
+    update(depth, raw = depth) {
       if (phase === "up") {
-        if (angle < STANDING - 18) {
+        if (depth > START) {
           phase = "down";
-          bottom = angle;
+          bottom = Math.max(depth, raw);
         }
         return null;
       }
-      bottom = Math.min(bottom, angle);
-      if (angle < STANDING) return null;
+      bottom = Math.max(bottom, depth, raw);
+      if (depth > STOOD_UP) return null;
       phase = "up";
-      if (bottom <= DEPTH) {
+      if (bottom >= COUNTS) {
         this.reps++;
         return "rep";
       }
+      if (bottom < IGNORE) return null;
       this.shallow++;
       return "shallow";
     },
@@ -85,13 +94,24 @@ const SIDES = {
   right: { shoulder: 12, hip: 24, knee: 26, ankle: 28 },
 };
 
-/** Picks the better-visible leg and returns its knee angle, or null when the legs aren't in view. */
-function readKnee(lm, w, h) {
-  const score = (s) => (lm[s.hip].visibility + lm[s.knee].visibility + lm[s.ankle].visibility) / 3;
-  const side = score(SIDES.left) >= score(SIDES.right) ? SIDES.left : SIDES.right;
+/** Knee angle and hip-above-knee height for a two-legged squat: both legs averaged when both
+ *  are in view and agree, otherwise the clearer leg. Null when the legs aren't in view. */
+function readLegs(lm, w, h) {
   const inFrame = (p) => p.x > -0.02 && p.x < 1.02 && p.y > -0.02 && p.y < 1.02;
-  if (score(side) < 0.55 || ![side.hip, side.knee, side.ankle].every((i) => inFrame(lm[i]))) return null;
-  return angleAt(lm[side.hip], lm[side.knee], lm[side.ankle], w, h);
+  const seen = (s) => (lm[s.hip].visibility + lm[s.knee].visibility + lm[s.ankle].visibility) / 3;
+  const ok = (s) => seen(s) >= 0.55 && [s.hip, s.knee, s.ankle].every((i) => inFrame(lm[i]));
+  const angle = (s) => angleAt(lm[s.hip], lm[s.knee], lm[s.ankle], w, h);
+  const legs = [SIDES.left, SIDES.right].filter(ok);
+  if (!legs.length) return null;
+  const gap = (s) => (lm[s.knee].y - lm[s.hip].y) * h; // px the hip sits above the knee
+  let use = legs;
+  if (legs.length === 2) {
+    // Both legs bend together in a squat; a big disagreement means one leg is hidden or misread.
+    const [l, r] = [angle(SIDES.left), angle(SIDES.right)];
+    if (Math.abs(l - r) > 30) use = [seen(SIDES.left) >= seen(SIDES.right) ? SIDES.left : SIDES.right];
+  }
+  const avg = (f) => use.reduce((t, s) => t + f(s), 0) / use.length;
+  return { angle: avg(angle), gap: avg(gap) };
 }
 
 const BONES = [
@@ -132,7 +152,7 @@ function say(text) {
   } catch {}
 }
 
-const run = { stream: null, raf: 0, counter: null, facing: "user", voice: true, startedAt: 0, smooth: null, lastVideoTime: -1, wakeLock: null, onFinish: null, feedbackUntil: 0 };
+const run = { stream: null, raf: 0, counter: null, facing: "user", voice: true, startedAt: 0, smooth: null, thigh: null, lastVideoTime: -1, wakeLock: null, onFinish: null, feedbackUntil: 0 };
 
 function setFeedback(text, tone = "", holdMs = 0) {
   if (Date.now() < run.feedbackUntil && !holdMs) return;
@@ -162,6 +182,7 @@ export async function openSquatCounter(onFinish) {
   run.onFinish = onFinish;
   run.counter = createSquatCounter();
   run.smooth = null;
+  run.thigh = null;
   run.startedAt = 0;
   run.lastVideoTime = -1;
   $("#counter-reps").textContent = "0";
@@ -215,31 +236,35 @@ function loop(landmarker) {
       return;
     }
     const lm = result.landmarks?.[0];
-    const angle = lm ? readKnee(lm, w, h) : null;
-    if (angle == null) {
+    const legs = lm ? readLegs(lm, w, h) : null;
+    if (!legs) {
       draw(ctx, lm, w, h, false);
       setFeedback("Step back so your hips, knees and feet are all in view");
       return;
     }
-    run.smooth = run.smooth == null ? angle : run.smooth * 0.55 + angle * 0.45;
-    const a = run.smooth;
+    // Learn her standing hip height while she's upright.
+    if (legs.angle >= KNEE_STANDING - 8 && legs.gap > 0) run.thigh = run.thigh == null ? legs.gap : run.thigh * 0.85 + legs.gap * 0.15;
+    const byKnee = (KNEE_STANDING - legs.angle) / (KNEE_STANDING - KNEE_PARALLEL);
+    const byHip = run.thigh ? 1 - legs.gap / run.thigh : 0;
+    const raw = clamp(Math.max(byKnee, byHip), 0, 1.4);
+    run.smooth = run.smooth == null ? raw : run.smooth * 0.4 + raw * 0.6;
+    const depth = run.smooth;
     run.startedAt ||= Date.now();
-    // Depth meter: 0% standing, 100% at parallel or deeper.
-    $("#depth-fill").style.height = `${Math.round(clamp((STANDING - a) / (STANDING - DEPTH), 0, 1) * 100)}%`;
-    const deep = a <= DEPTH;
+    $("#depth-fill").style.height = `${Math.round(clamp(depth, 0, 1) * 100)}%`;
+    const deep = Math.max(depth, raw) >= COUNTS;
     draw(ctx, lm, w, h, deep);
-    const event = run.counter.update(a);
+    const event = run.counter.update(depth, raw);
     if (event === "rep") {
       setReps(run.counter.reps);
       haptic(25);
       say(String(run.counter.reps));
-      setFeedback(run.counter.bottom <= GREAT ? "Great depth!" : "Good rep!", "good", 900);
+      setFeedback(run.counter.bottom >= GREAT ? "Great depth!" : "Good rep!", "good", 900);
     } else if (event === "shallow") {
       haptic(8);
       setFeedback("Not counted: sit a little lower, thighs to parallel", "bad", 1600);
     } else if (deep) {
       setFeedback("Good depth, now drive up through your heels", "good");
-    } else if (a < STANDING - 18) {
+    } else if (depth > START) {
       setFeedback("Lower… hips back, chest up");
     } else {
       setFeedback(run.counter.reps ? "Ready for the next one" : "Ready! Squat when you are", "");

@@ -172,8 +172,8 @@ function gluteCard(proteinGoal) {
       <div class="p-big" style="margin-top:10px">${eaten}<small> / ${proteinGoal} g protein</small></div>
       <div class="bar"><i style="width:${Math.round(pct * 100)}%;background:var(--protein)"></i></div>
       <ul>
-        <li>Train glutes 2–3 times a week: hip thrusts, Romanian deadlifts, squats, lunges</li>
-        <li>Add a little weight or a few reps each week</li>
+        <li>Train glutes 2–3 times a week: bridges, sofa hip thrusts, squats, lunges</li>
+        <li>Add a few reps, a pause or a stronger band each week</li>
         <li>Sleep 7–9 hours to recover and grow</li>
       </ul>
     </div>`;

@@ -1,6 +1,6 @@
 // Offline support: app shell is served from cache and refreshed in the background.
 const CHANNEL = "lean-beta"; // "lean-beta" in the beta build
-const CACHE = `${CHANNEL}-v7`;
+const CACHE = `${CHANNEL}-v8`;
 const MEDIA = `${CHANNEL}-media-v1`;
 const OWN = new RegExp(`^${CHANNEL}-(v\\d+|media-v\\d+)$`);
 const SHELL = [

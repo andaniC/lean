@@ -52,9 +52,11 @@ function exerciseEntry(ex, sets) {
   return {
     id: ex.id,
     name: ex.name,
-    weighted: !ex.bodyweight,
+    weighted: !ex.bodyweight && !ex.band,
+    band: !!ex.band,
     counter: ex.counter === "squat",
     last: last ? setsText(last) : "",
+    note: ex.note ?? "",
     sets: (sets ?? last ?? [{ reps: 10 }, { reps: 10 }, { reps: 10 }]).map((s) => ({ reps: s.reps ?? 10, kg: s.kg || "", done: false })),
   };
 }
@@ -119,7 +121,7 @@ function openSession(session, pickExercise) {
               <img src="${gif(e.id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
               <div>
                 <b>${esc(e.name)}</b>
-                <span>${e.last ? `Last time: ${esc(e.last)}` : "First time: pick a comfortable weight"}</span>
+                <span>${e.last ? `Last time: ${esc(e.last)}` : esc(e.note || "First time: go until 1–2 good reps are left")}</span>
               </div>
               <button class="s-remove" data-remove="${ei}" aria-label="Remove exercise">${icons.close}</button>
             </div>
@@ -139,7 +141,7 @@ function openSession(session, pickExercise) {
                   ${
                     e.weighted
                       ? `<input type="number" inputmode="decimal" data-ei="${ei}" data-si="${si}" data-k="kg" value="${s.kg}" placeholder="0" aria-label="Weight in kg">`
-                      : `<span class="s-bw">Body</span>`
+                      : `<span class="s-bw">${e.band ? "Band" : "Body"}</span>`
                   }
                   <button class="s-check" data-check="${ei}:${si}" aria-label="Set done">${icons.check}</button>
                 </div>`
