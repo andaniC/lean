@@ -11,6 +11,7 @@ import {
   saveEntry,
   waterFor,
   setWater,
+  burnedFor,
 } from "./store.js";
 import { $, $$, hydrateIcons, setRing, animateNumber, toast } from "./ui.js";
 import { icons } from "./icons.js";
@@ -18,6 +19,9 @@ import { initCamera, runAnalysis } from "./capture.js";
 import { openPlusMenu, openEntry, openSettings, openWeightSheet } from "./flows.js";
 import { startOnboarding, codeFromUrl } from "./onboarding.js";
 import { renderProgress } from "./progress.js";
+import { renderWorkouts, wireWorkouts } from "./workouts.js";
+import { initSquatCounter } from "./squats.js";
+import { setTheme } from "./theme.js";
 import { dateOf, todayKey, addDays, mondayOf, keyOf, round, esc, clamp, haptic, mealFor, MEAL_LABEL, clock } from "./util.js";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -52,10 +56,12 @@ function renderSummary() {
   const g = state.settings.goals;
   const t = totalsFor(state.selected);
   const eaten = state.calView === "eaten";
-  const left = g.calories - t.calories;
+  // Optionally "eat back" exercise calories.
+  const budget = g.calories + (state.settings.addBurned ? burnedFor(state.selected) : 0);
+  const left = budget - t.calories;
   animateNumber($("#cal-num"), eaten ? round(t.calories) : Math.abs(round(left)));
   $("#cal-label").textContent = eaten ? "Calories eaten" : left >= 0 ? "Calories left" : "Calories over";
-  setRing($("#cal-ring"), g.calories ? t.calories / g.calories : 0, 10.4, flame);
+  setRing($("#cal-ring"), budget ? t.calories / budget : 0, 10.4, flame);
 
   for (const key of ["protein", "carbs", "fat"]) {
     const name = key[0].toUpperCase() + key.slice(1);
@@ -274,19 +280,123 @@ function wireSwipes(list) {
 
 // ------------------------------------------------------------------ tabs
 
-function moveIndicator() {
-  const tab = $(`.tab[data-tab="${state.tab}"]`);
-  const ind = $("#tab-indicator");
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Slides the glass lens under `tab`. It stretches as it travels, then settles, like a drop of liquid. */
+function placeLens(tab, { stretch = true } = {}) {
+  const lens = $("#tab-indicator");
   if (!tab) return;
-  ind.style.transform = `translateX(${tab.offsetLeft + tab.offsetWidth / 2 - ind.offsetWidth / 2}px)`;
+  const x = `${tab.offsetLeft}px 0px`;
+  const moved = lens.style.translate && lens.style.translate !== x;
+  lens.style.width = `${tab.offsetWidth}px`;
+  lens.style.translate = x;
+  if (stretch && moved && !reduceMotion()) {
+    lens.animate([{ scale: "1 1" }, { scale: "1.2 0.9" }, { scale: "1 1" }], { duration: 500, easing: "ease-out" });
+  }
+}
+
+function moveIndicator() {
+  placeLens($(`.tab[data-tab="${state.tab}"]`));
+}
+
+function selectTab(tab) {
+  if (state.tab === tab) return moveIndicator();
+  state.tab = tab;
+  window.scrollTo({ top: 0 });
+  emit();
+}
+
+/** Press a tab to lift the lens onto it; drag along the bar to slide the lens and let go to switch. */
+function wireTabBar() {
+  const bar = $("#tab-glass");
+  const lens = $("#tab-indicator");
+  const tabs = $$(".tab", bar);
+  const real = tabs.filter((t) => t.dataset.tab);
+  let touch = null;
+  let suppressClick = false;
+
+  const centre = (t) => {
+    const r = t.getBoundingClientRect();
+    return r.left + r.width / 2;
+  };
+  const nearest = (x) => real.reduce((a, b) => (Math.abs(centre(b) - x) < Math.abs(centre(a) - x) ? b : a));
+  const markUnder = (t) => {
+    if (touch.under !== t) haptic(6);
+    touch.under = t;
+    tabs.forEach((x) => x.classList.toggle("under", x === t));
+  };
+  const end = () => {
+    bar.classList.remove("touching", "dragging");
+    tabs.forEach((x) => x.classList.remove("under"));
+    touch = null;
+  };
+
+  bar.addEventListener("pointerdown", (e) => {
+    const t = e.target.closest(".tab");
+    if (!t || touch) return;
+    touch = { id: e.pointerId, x0: e.clientX, dragging: false, under: null };
+    bar.classList.add("touching");
+    markUnder(t);
+    if (t.dataset.tab) placeLens(t, { stretch: false });
+  });
+
+  bar.addEventListener("pointermove", (e) => {
+    if (!touch || e.pointerId !== touch.id) return;
+    if (!touch.dragging && Math.abs(e.clientX - touch.x0) < 8) return;
+    if (!touch.dragging) {
+      touch.dragging = true;
+      bar.classList.add("dragging");
+      bar.setPointerCapture(e.pointerId);
+    }
+    // The lens follows the finger between the first and last real tab.
+    const box = bar.getBoundingClientRect();
+    const w = lens.offsetWidth;
+    const min = real[0].offsetLeft;
+    const max = real[real.length - 1].offsetLeft;
+    const x = Math.max(min, Math.min(max, e.clientX - box.left - w / 2));
+    lens.style.translate = `${x}px 0px`;
+    markUnder(nearest(box.left + x + w / 2));
+  });
+
+  // On window, so a finger that slides off the bar before lifting still lets go of the lens.
+  window.addEventListener("pointerup", (e) => {
+    if (!touch || e.pointerId !== touch.id) return;
+    const { dragging, under } = touch;
+    end();
+    if (!dragging) {
+      // A plain tap: the click handler switches tabs. If the finger left the tab, no click comes, so settle back.
+      setTimeout(moveIndicator, 0);
+      return;
+    }
+    suppressClick = true;
+    setTimeout(() => (suppressClick = false), 0);
+    selectTab(under.dataset.tab);
+  });
+
+  window.addEventListener("pointercancel", (e) => {
+    if (!touch || e.pointerId !== touch.id) return;
+    end();
+    moveIndicator();
+  });
+
+  tabs.forEach((t) =>
+    t.addEventListener("click", () => {
+      if (suppressClick) return;
+      if (t.hasAttribute("data-profile")) {
+        moveIndicator();
+        return openSettings(settingsOpts);
+      }
+      selectTab(t.dataset.tab);
+    })
+  );
 }
 
 function renderTabs() {
   $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === state.tab));
-  const home = $("#screen-home");
-  const prog = $("#screen-progress");
-  if (home.hidden !== (state.tab !== "home")) home.hidden = state.tab !== "home";
-  if (prog.hidden !== (state.tab !== "progress")) prog.hidden = state.tab !== "progress";
+  for (const [tab, id] of [["home", "#screen-home"], ["workouts", "#screen-workouts"], ["progress", "#screen-progress"]]) {
+    const el = $(id);
+    if (el.hidden !== (state.tab !== tab)) el.hidden = state.tab !== tab;
+  }
   moveIndicator();
 }
 
@@ -299,6 +409,8 @@ function render() {
     renderSummary();
     renderWater();
     renderLog();
+  } else if (state.tab === "workouts") {
+    renderWorkouts($("#workouts-body"));
   } else {
     renderProgress($("#progress-body"), { onLogWeight: openWeightSheet });
   }
@@ -329,14 +441,7 @@ function showWaterPage() {
 const settingsOpts = { onRedoOnboarding: () => startOnboarding(render, { fromSettings: true }) };
 
 function wire() {
-  $$(".tab").forEach((t) =>
-    t.addEventListener("click", () => {
-      if (state.tab === t.dataset.tab) return;
-      state.tab = t.dataset.tab;
-      window.scrollTo({ top: 0 });
-      emit();
-    })
-  );
+  wireTabBar();
   $("#plus").addEventListener("click", openPlusMenu);
   $("#open-settings").addEventListener("click", () => openSettings(settingsOpts));
   $$("[data-open-settings]").forEach((b) => b.addEventListener("click", () => openSettings(settingsOpts)));
@@ -416,6 +521,9 @@ function wire() {
     week.classList.add(dir > 0 ? "slide-left" : "slide-right");
   });
 
+  wireWorkouts($("#workouts-body"));
+  initSquatCounter();
+
   // Food list
   const list = $("#log-list");
   wireSwipes(list);
@@ -450,6 +558,7 @@ function wire() {
 }
 
 async function boot() {
+  setTheme(state.settings.appearance);
   hydrateIcons();
   initCamera();
   wire();

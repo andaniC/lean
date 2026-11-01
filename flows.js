@@ -15,6 +15,7 @@ import {
 } from "./store.js";
 import { openCamera, newEntry, runAnalysis, startTextAnalysis, photoBase64 } from "./capture.js";
 import { computePlan, direction } from "./plan.js";
+import { setTheme } from "./theme.js";
 import { esc, round, round1, num, uid, todayKey, timeLabel, clamp, haptic, pad, dateOf, mealFor, MEALS, MEAL_LABEL } from "./util.js";
 
 const closeBtn = `<button class="round-btn press" data-close aria-label="Close" data-icon="close"></button>`;
@@ -38,10 +39,10 @@ export function openPlusMenu() {
     html: `
       <div class="sheet-head"><h2 class="sheet-title">Log food</h2>${closeBtn}</div>
       <div class="tiles">
-        ${tile("scan", "camera", "#fff0e5", "var(--flame)", "Scan food", "Snap a photo and AI counts it")}
-        ${tile("search", "search", "#efedff", "var(--dinner)", "Food database", "Search foods by name")}
-        ${tile("describe", "sparkle", "#fdedf4", "var(--snack)", "Describe meal", "Type what you ate")}
-        ${tile("manual", "pencil", "#fff3e0", "#c27c0e", "Manual entry", "Enter exact numbers")}
+        ${tile("scan", "camera", "var(--flame-bg)", "var(--flame)", "Scan food", "Snap a photo and AI counts it")}
+        ${tile("search", "search", "var(--dinner-bg)", "var(--dinner)", "Food database", "Search foods by name")}
+        ${tile("describe", "sparkle", "var(--snack-bg)", "var(--snack)", "Describe meal", "Type what you ate")}
+        ${tile("manual", "pencil", "var(--carbs-bg)", "var(--carbs-ink)", "Manual entry", "Enter exact numbers")}
         ${tile("water", "drop", "var(--water-bg)", "var(--water)", "Log water", "Add a glass of water")}
         ${tile("weight", "scale", "var(--protein-bg)", "var(--protein)", "Log weight", "Track your progress")}
       </div>`,
@@ -514,6 +515,15 @@ export function openSettings({ onRedoOnboarding } = {}) {
         </div>
 
         <section>
+          <h4>Appearance</h4>
+          <div class="segmented" data-appearance>
+            ${[["system", "Automatic"], ["light", "Light"], ["dark", "Dark"]]
+              .map(([k, v]) => `<button class="${(s.appearance ?? "system") === k ? "on" : ""}" data-v="${k}">${v}</button>`)
+              .join("")}
+          </div>
+        </section>
+
+        <section>
           <h4>Daily targets</h4>
           <div class="rows">
             <div class="row"><span class="dot" style="background:var(--ink)"></span><span class="row-label">Calories</span><input type="number" inputmode="numeric" data-goal="calories" value="${s.goals.calories}"></div>
@@ -521,6 +531,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
             <div class="row"><span class="dot" style="background:var(--carbs)"></span><span class="row-label">Carbs (g)</span><input type="number" inputmode="numeric" data-goal="carbs" value="${s.goals.carbs}"></div>
             <div class="row"><span class="dot" style="background:var(--fat)"></span><span class="row-label">Fat (g)</span><input type="number" inputmode="numeric" data-goal="fat" value="${s.goals.fat}"></div>
             <div class="row"><span class="dot" style="background:var(--water)"></span><span class="row-label">Water (ml)</span><input type="number" inputmode="numeric" step="250" data-goal="water" value="${s.goals.water}"></div>
+            <div class="row"><span class="row-label">Add exercise calories to my goal<small>Eat back what you burn in workouts</small></span><label class="switch"><input type="checkbox" data-addburned ${s.addBurned ? "checked" : ""}><i></i></label></div>
             <div class="row"><span class="row-label">Recalculate from my details<small>Uses the details below</small></span><button class="row-action" data-recalc>Update</button></div>
           </div>
         </section>
@@ -561,7 +572,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
             <div class="row"><span class="row-label">Export backup<small>Save all your logs as a file</small></span><button class="row-action" data-export>Export</button></div>
             <div class="row"><span class="row-label">Restore backup</span><button class="row-action" data-import>Import</button></div>
             <div class="row"><span class="row-label">Redo onboarding</span><button class="row-action" data-redo>Start</button></div>
-            <div class="row"><span class="row-label" style="color:#d93a2f">Delete all data</span><button class="row-action" style="color:#d93a2f" data-wipe>Delete</button></div>
+            <div class="row"><span class="row-label" style="color:var(--danger)">Delete all data</span><button class="row-action" style="color:var(--danger)" data-wipe>Delete</button></div>
           </div>
         </section>
         <p class="status" style="text-align:center;margin-top:22px">Lean · AI by Claude · Food data from USDA and Open Food Facts</p>
@@ -610,6 +621,14 @@ export function openSettings({ onRedoOnboarding } = {}) {
         })
       );
       $("[data-recalc]", sheet).addEventListener("click", () => recalc());
+      $("[data-addburned]", sheet).addEventListener("change", (e) => updateSettings({ addBurned: e.target.checked }));
+      $$("[data-appearance] button", sheet).forEach((b) =>
+        b.addEventListener("click", () => {
+          $$("[data-appearance] button", sheet).forEach((x) => x.classList.toggle("on", x === b));
+          updateSettings({ appearance: b.dataset.v });
+          setTheme(b.dataset.v);
+        })
+      );
 
       const status = $("[data-status]", sheet);
       const codeInput = $("[data-code]", sheet);
@@ -630,7 +649,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
 
       $("[data-export]", sheet).addEventListener("click", () => {
         const { accessCode, ...settings } = state.settings;
-        const blob = new Blob([JSON.stringify({ app: "lean", version: 2, settings, entries: state.entries, weights: state.weights, water: state.water })], {
+        const blob = new Blob([JSON.stringify({ app: "lean", version: 3, settings, entries: state.entries, weights: state.weights, water: state.water, workouts: state.workouts })], {
           type: "application/json",
         });
         const a = document.createElement("a");
@@ -654,7 +673,7 @@ export function openSettings({ onRedoOnboarding } = {}) {
               confirm: "Restore",
             });
             if (!ok) return;
-            await replaceAll({ entries: data.entries, weights: data.weights ?? [], water: data.water ?? {} });
+            await replaceAll({ entries: data.entries, weights: data.weights ?? [], water: data.water ?? {}, workouts: data.workouts ?? [] });
             if (data.settings) updateSettings({ ...data.settings, accessCode: state.settings.accessCode });
             close();
             toast("Backup restored");

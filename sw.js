@@ -1,5 +1,8 @@
 // Offline support: app shell is served from cache and refreshed in the background.
-const CACHE = "lean-v6";
+const CHANNEL = "lean"; // "lean-beta" in the beta build
+const CACHE = `${CHANNEL}-v12`;
+const MEDIA = `${CHANNEL}-media-v1`;
+const OWN = new RegExp(`^${CHANNEL}-(v\\d+|media-v\\d+)$`);
 const SHELL = [
   "./",
   "index.html",
@@ -19,6 +22,13 @@ const SHELL = [
   "store.js",
   "ui.js",
   "util.js",
+  "workouts.js",
+  "training.js",
+  "demo.js",
+  "theme.js",
+  "squats.js",
+  "exercise-data.js",
+  "data/exercises.json",
   "vendor/zxing.js",
   "manifest.webmanifest",
   "icons/icon-192.png",
@@ -34,7 +44,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => OWN.test(k) && k !== CACHE && k !== MEDIA).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -52,6 +62,24 @@ self.addEventListener("fetch", (event) => {
         if (hit) return hit;
         const res = await fetch(req);
         if (res.ok || res.type === "opaque") c.put(req, res.clone());
+        return res;
+      })
+    );
+    return;
+  }
+
+  // Exercise GIFs and the squat tracker's runtime/model: cache first, they're versioned and large.
+  const media =
+    url.hostname === "static.exercisedb.dev" ||
+    (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/npm/@mediapipe/")) ||
+    (url.hostname === "storage.googleapis.com" && url.pathname.startsWith("/mediapipe-models/"));
+  if (media) {
+    event.respondWith(
+      caches.open(MEDIA).then(async (c) => {
+        const hit = await c.match(req);
+        if (hit) return hit;
+        const res = await fetch(req);
+        if (res.ok) c.put(req, res.clone());
         return res;
       })
     );

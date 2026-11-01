@@ -146,8 +146,8 @@ export const gluteTips = (protein) => `
     <h3>🍑 Your glute plan</h3>
     <ul>
       <li>Eat <b>${protein} g of protein</b> every day, spread over your meals</li>
-      <li>Train glutes 2–3 times a week: hip thrusts, Romanian deadlifts, squats and lunges</li>
-      <li>Add a little weight or a few reps each week so they keep growing</li>
+      <li>Train glutes 2–3 times a week at home: glute bridges, sofa hip thrusts, squats and lunges</li>
+      <li>Add a few reps, a pause at the top or a stronger band each week so they keep growing</li>
       <li>Sleep 7–9 hours; muscle is built while you recover</li>
     </ul>
   </div>`;

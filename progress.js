@@ -109,11 +109,11 @@ function weightChart(p) {
   return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weight over time">
       <defs><linearGradient id="wfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2f9a63" stop-opacity=".22"/><stop offset="1" stop-color="#2f9a63" stop-opacity="0"/></linearGradient></defs>
-      ${ticks.map((v) => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="#e4e4e6"/><text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end">${round(v)}</text>`).join("")}
+      ${ticks.map((v) => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)"/><text x="${padL - 6}" y="${y(v) + 3}" text-anchor="end">${round(v)}</text>`).join("")}
       ${goalLine}
       <path d="${area}" fill="url(#wfill)"/>
       <path d="${path}" fill="none" stroke="#2f9a63" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${x(last.t)}" cy="${y(last.kg)}" r="4.5" fill="#2f9a63" stroke="#fff" stroke-width="2"/>
+      <circle cx="${x(last.t)}" cy="${y(last.kg)}" r="4.5" fill="#2f9a63" style="stroke:var(--card)" stroke-width="2"/>
       <text x="${padL}" y="${H - 4}">${fmt(t0)}</text>
       <text x="${W - padR}" y="${H - 4}" text-anchor="end">${fmt(last.t)}</text>
     </svg>`;
@@ -147,7 +147,7 @@ function calorieChart(goal) {
   const labels = ["M", "T", "W", "T", "F", "S", "S"];
   return `
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Calories per day this week">
-      <line x1="0" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="#bdbdc2" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <line x1="0" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" style="stroke:var(--faint)" stroke-width="1.5" stroke-dasharray="4 4"/>
       <text x="${W}" y="${y(goal) - 5}" text-anchor="end">Goal ${goal}</text>
       ${keys
         .map((k, i) => {
@@ -155,8 +155,8 @@ function calorieChart(goal) {
           const cx = slot * i + slot / 2;
           const h = Math.max(0, H - padB - y(v));
           const fill = v > goal ? "#ef6c63" : "#ff7a1a";
-          const bar = v > 0 ? `<rect x="${cx - bw / 2}" y="${y(v)}" width="${bw}" height="${h}" rx="7" fill="${fill}"/>` : `<rect x="${cx - bw / 2}" y="${H - padB - 4}" width="${bw}" height="4" rx="2" fill="#e2e2e5"/>`;
-          return `${bar}<text x="${cx}" y="${H - 5}" text-anchor="middle" style="${k === today ? "fill:#111;font-weight:700" : ""}">${labels[i]}</text>`;
+          const bar = v > 0 ? `<rect x="${cx - bw / 2}" y="${y(v)}" width="${bw}" height="${h}" rx="7" fill="${fill}"/>` : `<rect x="${cx - bw / 2}" y="${H - padB - 4}" width="${bw}" height="4" rx="2" style="fill:var(--track)"/>`;
+          return `${bar}<text x="${cx}" y="${H - 5}" text-anchor="middle" style="${k === today ? "fill:var(--ink);font-weight:700" : ""}">${labels[i]}</text>`;
         })
         .join("")}
     </svg>`;
@@ -172,8 +172,8 @@ function gluteCard(proteinGoal) {
       <div class="p-big" style="margin-top:10px">${eaten}<small> / ${proteinGoal} g protein</small></div>
       <div class="bar"><i style="width:${Math.round(pct * 100)}%;background:var(--protein)"></i></div>
       <ul>
-        <li>Train glutes 2–3 times a week: hip thrusts, Romanian deadlifts, squats, lunges</li>
-        <li>Add a little weight or a few reps each week</li>
+        <li>Train glutes 2–3 times a week: bridges, sofa hip thrusts, squats, lunges</li>
+        <li>Add a few reps, a pause or a stronger band each week</li>
         <li>Sleep 7–9 hours to recover and grow</li>
       </ul>
     </div>`;

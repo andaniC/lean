@@ -1,16 +1,16 @@
 // Camera stream + image helpers.
 
-const ATTEMPTS = [
-  { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1440 } },
-  { facingMode: { ideal: "environment" } },
+const attemptsFor = (facing) => [
+  { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+  { facingMode: { ideal: facing } },
   true,
 ];
 
-export async function startCamera(video) {
+export async function startCamera(video, facing = "environment") {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("Camera not supported in this browser.");
   let stream;
   let lastErr;
-  for (const constraints of ATTEMPTS) {
+  for (const constraints of attemptsFor(facing)) {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: constraints });
       break;
