@@ -22,7 +22,8 @@ if [ "$CHANNEL" = "beta" ]; then
   sed -i '' 's/const CHANNEL = "lean";/const CHANNEL = "lean-beta";/' "$DEST/sw.js"
   sed -i '' 's/"name": "Lean – Calorie Tracker"/"name": "Lean Beta"/; s/"short_name": "Lean"/"short_name": "Lean Beta"/' "$DEST/manifest.webmanifest"
   sed -i '' 's|<title>Lean</title>|<title>Lean Beta</title>|; s|content="Lean" />|content="Lean Beta" />|; s|<h1 class="brand">Lean</h1>|<h1 class="brand">Lean <span class="beta-tag">beta</span></h1>|' "$DEST/index.html"
-  grep -q 'STORAGE = "lean-beta"' "$DEST/config.js" && grep -q 'CHANNEL = "lean-beta"' "$DEST/sw.js" || { echo "beta rewrite failed" >&2; exit 1; }
+  sed -i '' 's/"lean.settings.v1"/"lean-beta.settings.v1"/' "$DEST/index.html"
+  grep -q 'STORAGE = "lean-beta"' "$DEST/config.js" && grep -q 'CHANNEL = "lean-beta"' "$DEST/sw.js" && grep -q '"lean-beta.settings.v1"' "$DEST/index.html" || { echo "beta rewrite failed" >&2; exit 1; }
 else
   rsync -a --delete --exclude ".DS_Store" --exclude "beta/" --exclude ".git" public/ "$WT/"
 fi

@@ -4,6 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
+    <script>
+      // Pick light or dark before first paint so dark mode never flashes white. theme.js keeps it in sync.
+      try {
+        const appearance = JSON.parse(localStorage.getItem("lean.settings.v1") || "{}").appearance;
+        const dark = appearance === "dark" || (appearance !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#000000" : "#ffffff";
+      } catch {}
+    </script>
     <meta name="description" content="Snap a photo of your food and track calories and macros." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -115,14 +124,14 @@
     </div>
 
     <nav class="tabbar" id="tabbar" hidden>
-      <div class="tabbar-inner">
-        <span class="tab-indicator" id="tab-indicator"></span>
+      <div class="tab-glass liquid" id="tab-glass">
+        <span class="tab-lens" id="tab-indicator"></span>
         <button class="tab active" data-tab="home"><span data-icon="grid"></span>Calories</button>
         <button class="tab" data-tab="workouts"><span data-icon="dumbbell"></span>Workouts</button>
-        <button class="plus" id="plus" aria-label="Add food" data-icon="plus"></button>
         <button class="tab" data-tab="progress"><span data-icon="progress"></span>Progress</button>
         <button class="tab" data-profile><span data-icon="person"></span>Profile</button>
       </div>
+      <button class="plus liquid" id="plus" aria-label="Add food" data-icon="plus"></button>
     </nav>
 
     <!-- Camera -->
