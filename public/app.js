@@ -283,7 +283,15 @@ function moveIndicator() {
   const tab = $(`.tab[data-tab="${state.tab}"]`);
   const ind = $("#tab-indicator");
   if (!tab) return;
-  ind.style.transform = `translateX(${tab.offsetLeft + tab.offsetWidth / 2 - ind.offsetWidth / 2}px)`;
+  const width = Math.min(tab.offsetWidth - 4, 76);
+  const x = `translateX(${tab.offsetLeft + tab.offsetWidth / 2 - width / 2}px)`;
+  const moved = ind.style.transform && ind.style.transform !== x;
+  ind.style.width = `${width}px`;
+  ind.style.transform = x;
+  // Glass lens stretches as it slides, then settles.
+  if (moved && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    ind.animate([{ scale: "1 1" }, { scale: "1.22 0.88" }, { scale: "1 1" }], { duration: 480, easing: "ease-out" });
+  }
 }
 
 function renderTabs() {
