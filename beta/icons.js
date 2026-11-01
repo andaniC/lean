@@ -18,7 +18,7 @@ export const icons = {
   ),
   progress:
     `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/>` +
-    `<path d="M6 13.2h2.6l1.7-3.9 2.6 6.6 1.8-3.4H18" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    `<path d="M6 13.2h2.6l1.7-3.9 2.6 6.6 1.8-3.4H18" fill="none" style="stroke:var(--knock,#fff)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   close: s(`<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>`, `stroke-width="2.4"`),
   image: f(
     `<path fill-rule="evenodd" d="M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3zm2.6 3.7a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM5.5 17.2v.3c0 .6.4 1 1 1h11c.6 0 1-.4 1-1v-2.1l-3.2-2.9-3.8 3.6-2.6-2.1z"/>`

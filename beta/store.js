@@ -8,6 +8,7 @@ const SETTINGS_KEY = `${STORAGE}.settings.v1`;
 export const DEFAULT_SETTINGS = {
   onboarded: false,
   addBurned: false,
+  appearance: "system",
   name: "",
   accessCode: "",
   profile: {
