@@ -7,6 +7,7 @@ import { GLUTE_EXERCISES } from "./exercise-data.js";
 import { state, saveWorkout, currentWeight, emit } from "./store.js";
 import { openSquatCounter, preloadTracker } from "./squats.js";
 import { openDemo } from "./demo.js";
+import { confetti } from "./celebrate.js";
 import { esc, round, round1, num, uid, todayKey, dateOf, haptic, clamp } from "./util.js";
 import { STORAGE } from "./config.js";
 
@@ -305,8 +306,9 @@ function openSession(session, pickExercise) {
         state.tab = "workouts";
         emit();
         haptic(40);
+        confetti();
         const sets = exercises.reduce((s, e) => s + e.sets.length, 0);
-        toast(`Workout saved · ${sets} sets · ${minutes} min`);
+        toast(`🔥 Workout done · ${sets} set${sets === 1 ? "" : "s"} · ${minutes} min`);
       });
     },
   });
