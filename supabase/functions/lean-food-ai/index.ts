@@ -24,8 +24,11 @@ const NUTRITION_SCHEMA = {
           name: { type: "string" },
           amount: { type: "string" },
           calories: { type: "number" },
+          protein: { type: "number" },
+          carbs: { type: "number" },
+          fat: { type: "number" },
         },
-        required: ["name", "amount", "calories"],
+        required: ["name", "amount", "calories", "protein", "carbs", "fat"],
         additionalProperties: false,
       },
     },
@@ -42,11 +45,13 @@ How to estimate:
 3. Work out each component's calories and macros from standard reference values (USDA FoodData Central, or the product's own label) for that weight and cooking method.
 4. Add them up. The totals must be consistent: protein x 4 + carbs x 4 + fat x 9 (+ alcohol x 7 for alcoholic drinks) should land within about 5% of the calorie total.
 
-Estimate the whole portion shown or described, not per 100 g. When something is ambiguous, choose the most likely common version and make the assumption visible in the item names and amounts rather than hedging.
+Estimate the whole portion shown or described, not per 100 g. When something is ambiguous, choose the most likely common version and estimate it confidently.
+
+Restaurant menu items and branded products: the person lives in South Africa, so a named chain item or product always means the South African version (for example from KFC, Nando's, Steers, Debonairs, Spur, Wimpy, Chicken Licken, McDonald's, Woolworths or Checkers). Menus differ by country and a meal deal's contents decide its calories, so use web_search to look up that exact item on the South African menu, what it contains and its published nutrition, before estimating. Skip the search only when you are certain of the South African item's contents and nutrition. Never use another country's version of an item, and don't swap a named item for a different one. Prefer the chain's own South African nutrition information. Don't search for everyday foods you can estimate from reference values. If the exact item can't be found, estimate it from the closest item on the South African menu.
 
 Fields:
-- name: a short dish name, 2 to 4 words, Title Case (for example "Grilled Salmon" or "Chicken With Sauce").
-- items: each component with its amount in grams or ml ("150 g", "330 ml") and its calories. Items must add up to the total.
+- name: a short dish name, 2 to 4 words, Title Case (for example "Grilled Salmon" or "Chicken With Sauce"). When the person named a specific product or menu item, keep their name for it (fix only spelling and capitals), even if the numbers come from a close match.
+- items: each component with its amount in grams or ml ("150 g", "330 ml"), calories, protein, carbs and fat. Items must add up to the totals. Item names are plain food names, like "Original Recipe chicken, 2 pieces" or "Regular chips": never add notes such as "assumed", "estimated", "approximately" or "like ...", and never mention where the numbers came from.
 - calories, protein, carbs, fat: totals for the portion, as whole numbers.
 - health_score: 1 to 10, how nutritious the meal is overall.
 - barcode: the digits of a product barcode if one is clearly readable, otherwise "".
@@ -263,26 +268,46 @@ async function analyze(client: Anthropic, body: Body) {
   if (image) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } });
   content.push({ type: "text", text: prompt });
 
+  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content }];
   const params = {
     model: MODEL,
     max_tokens: 16000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default", // re-runs a declined request on Anthropic's recommended fallback model
     system: SYSTEM,
-    output_config: { effort: "high", format: { type: "json_schema", schema: NUTRITION_SCHEMA } },
-    messages: [{ role: "user", content }],
+    // Low effort: about 5x faster than high with the same accuracy on our reference foods (Nov 2026 sweep).
+    output_config: { effort: "low", format: { type: "json_schema", schema: NUTRITION_SCHEMA } },
+    tools: [
+      {
+        type: "web_search_20260209",
+        name: "web_search",
+        max_uses: 3,
+        user_location: { type: "approximate", country: "ZA", timezone: "Africa/Johannesburg" },
+      },
+    ],
+    messages,
   };
-  // Cast: SDK typings may lag the "default" fallback mode.
-  const res = await client.beta.messages.create(
-    params as unknown as Parameters<typeof client.beta.messages.create>[0],
-  ) as Anthropic.Beta.BetaMessage;
+
+  let res: Anthropic.Beta.BetaMessage;
+  // A long server-side search can pause the turn; send it back to let it finish.
+  for (let i = 0; ; i++) {
+    // Cast: SDK typings may lag the "default" fallback mode and the latest web search tool.
+    res = await client.beta.messages.create(
+      params as unknown as Parameters<typeof client.beta.messages.create>[0],
+    ) as Anthropic.Beta.BetaMessage;
+    if (res.stop_reason !== "pause_turn" || i === 2) break;
+    messages.push({ role: "assistant", content: res.content as unknown as Anthropic.Beta.BetaContentBlockParam[] });
+  }
 
   if (res.stop_reason === "refusal") return reply({ error: "Claude couldn't analyze this one. Try a different photo." }, 422);
   if (res.stop_reason === "max_tokens") return reply({ error: "The analysis was cut short. Please retry." }, 502);
-  const block = res.content.find((b) => b.type === "text");
+  if (res.stop_reason === "pause_turn") return reply({ error: "Looking that up took too long. Please retry." }, 504);
+  // The answer is the last text block; earlier ones can be notes written around a web search.
+  const block = res.content.findLast((b) => b.type === "text");
   if (!block || block.type !== "text") return reply({ error: "Claude returned an empty answer. Please retry." }, 502);
+  const searches = res.usage?.server_tool_use?.web_search_requests ?? 0;
   try {
-    return reply({ result: JSON.parse(block.text), model: res.model });
+    return reply({ result: JSON.parse(block.text), model: res.model, searches });
   } catch {
     return reply({ error: "Claude's answer couldn't be read. Please retry." }, 502);
   }

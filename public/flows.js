@@ -314,7 +314,14 @@ export function openEntry(entry) {
          <button class="round-btn close-l" data-close aria-label="Close" data-icon="close"></button>
          <button class="round-btn trash-r" data-del aria-label="Delete" data-icon="trash"></button></div>`
     : `<div class="sheet-head"><span></span>${closeBtn}</div>`;
-  const items = (entry.items || []).filter((i) => i && i.name);
+  const items = (entry.items || []).filter((i) => i && i.name).map((i) => ({ ...i }));
+  // Older estimates only had calories per ingredient: share the meal's macros out by calories.
+  const itemCalories = items.reduce((sum, i) => sum + (i.calories || 0), 0);
+  for (const i of items) {
+    for (const m of ["protein", "carbs", "fat"]) {
+      if (typeof i[m] !== "number") i[m] = itemCalories ? (base[m] * (i.calories || 0)) / itemCalories : 0;
+    }
+  }
 
   openSheet({
     tall: !!entry.photo,
@@ -350,16 +357,11 @@ export function openEntry(entry) {
                <div class="bar"><i style="width:${clamp(entry.healthScore, 0, 10) * 10}%"></i></div></div>`
             : ""
         }
-        ${
-          items.length
-            ? `<div class="items"><h4>Ingredients</h4>${items
-                .map(
-                  (i) =>
-                    `<div class="item"><div>${esc(i.name)}<small>${esc(i.amount || "")}</small></div><b>${round(i.calories)} cal</b></div>`
-                )
-                .join("")}</div>`
-            : ""
-        }
+        <div class="items" data-items-box ${items.length ? "" : "hidden"}>
+          <h4>Ingredients</h4>
+          <p class="items-hint">Tap one to edit it, or ✕ to remove it.</p>
+          <div data-items></div>
+        </div>
         ${
           entry.source !== "manual"
             ? `<div class="fix-box"><input class="input" data-fix-text placeholder="Fix with AI, e.g. “no rice, 2 eggs”" maxlength="200">
@@ -385,6 +387,92 @@ export function openEntry(entry) {
         $("[data-servings]", sheet).textContent = draft.servings;
       };
       paint();
+
+      const edited = () => {
+        const [hh, mm] = ($("[data-time]", sheet).value || "").split(":").map(Number);
+        let time = entry.time;
+        if (Number.isFinite(hh) && Number.isFinite(mm)) {
+          const d = dateOf(entry.date);
+          d.setHours(hh, mm, 0, 0);
+          time = d.getTime();
+        }
+        return {
+          ...entry,
+          name: $(".name-input", sheet).value.trim() || entry.name,
+          meal: draft.meal,
+          time,
+          servings: draft.servings,
+          items: items.map((i) => ({
+            name: i.name,
+            amount: i.amount,
+            calories: round1(i.calories),
+            protein: round1(i.protein),
+            carbs: round1(i.carbs),
+            fat: round1(i.fat),
+          })),
+          calories: round1(base.calories),
+          protein: round1(base.protein),
+          carbs: round1(base.carbs),
+          fat: round1(base.fat),
+        };
+      };
+
+      // Ingredients: removing or editing one moves the meal's totals by the difference, and saves straight away.
+      const shift = (from, to) => {
+        for (const f of fields) base[f] = Math.max(0, base[f] + (to?.[f] || 0) - (from?.[f] || 0));
+      };
+      const renderItems = () => {
+        $("[data-items-box]", sheet).hidden = !items.length;
+        const list = $("[data-items]", sheet);
+        list.innerHTML = items
+          .map(
+            (i, n) => `
+            <div class="item">
+              <button class="item-main" data-edit-item="${n}"><div>${esc(i.name)}<small>${esc(i.amount || "")}</small></div><b>${round(i.calories)} cal</b></button>
+              <button class="item-del" data-del-item="${n}" aria-label="Remove ${esc(i.name)}" data-icon="close"></button>
+            </div>`
+          )
+          .join("");
+        hydrateIcons(list);
+      };
+      const removeItem = (n) => {
+        const [gone] = items.splice(n, 1);
+        shift(gone, null);
+        renderItems();
+        paint();
+        saveEntry(edited());
+        haptic(10);
+        toast(`Removed ${gone.name}`, 4000, {
+          label: "Undo",
+          onClick: () => {
+            items.splice(n, 0, gone);
+            shift(null, gone);
+            renderItems();
+            paint();
+            saveEntry(edited());
+          },
+        });
+      };
+      renderItems();
+      $("[data-items]", sheet).addEventListener("click", (e) => {
+        const del = e.target.closest("[data-del-item]");
+        if (del) return removeItem(Number(del.dataset.delItem));
+        const edit = e.target.closest("[data-edit-item]");
+        if (edit) {
+          const n = Number(edit.dataset.editItem);
+          openItemEditor(items[n], {
+            onSave: (next) => {
+              shift(items[n], next);
+              items[n] = next;
+              renderItems();
+              paint();
+              saveEntry(edited());
+            },
+            onRemove: () => removeItem(n),
+          });
+        }
+      });
+
       for (const f of fields) {
         $(`[data-f="${f}"]`, sheet).addEventListener("input", (e) => {
           base[f] = Math.max(0, num(e.target.value)) / draft.servings;
@@ -406,25 +494,8 @@ export function openEntry(entry) {
         })
       );
       $("[data-save]", sheet).addEventListener("click", async () => {
-        const [hh, mm] = ($("[data-time]", sheet).value || "").split(":").map(Number);
-        let time = entry.time;
-        if (Number.isFinite(hh) && Number.isFinite(mm)) {
-          const d = dateOf(entry.date);
-          d.setHours(hh, mm, 0, 0);
-          time = d.getTime();
-        }
         close();
-        await saveEntry({
-          ...entry,
-          name: $(".name-input", sheet).value.trim() || entry.name,
-          meal: draft.meal,
-          time,
-          servings: draft.servings,
-          calories: round1(base.calories),
-          protein: round1(base.protein),
-          carbs: round1(base.carbs),
-          fat: round1(base.fat),
-        });
+        await saveEntry(edited());
       });
       $$("[data-del]", sheet).forEach((b) =>
         b.addEventListener("click", async () => {
@@ -463,6 +534,64 @@ export function openEntry(entry) {
         const image = entry.photo ? await photoBase64(entry) : null;
         close();
         runAnalysis({ ...entry }, { mode: "fix", image, previous, correction });
+      });
+    },
+  });
+}
+
+/** "150 g" → [150, "g"]; kilograms and litres become g and ml so "0.2 kg" compares with "150 g". */
+function parseAmount(text) {
+  const m = /(\d+(?:[.,]\d+)?)\s*([a-z]+)/i.exec(String(text || ""));
+  if (!m) return null;
+  let value = Number(m[1].replace(",", "."));
+  let unit = m[2].toLowerCase();
+  if (unit === "kg") [value, unit] = [value * 1000, "g"];
+  if (unit === "l") [value, unit] = [value * 1000, "ml"];
+  return value > 0 ? [value, unit.replace(/s$/, "")] : null;
+}
+
+function openItemEditor(item, { onSave, onRemove }) {
+  const macros = ["calories", "protein", "carbs", "fat"];
+  const label = { calories: "Calories", protein: "Protein (g)", carbs: "Carbs (g)", fat: "Fat (g)" };
+  openSheet({
+    html: `
+      <div class="sheet-head"><h2 class="sheet-title">Edit ingredient</h2>${closeBtn}</div>
+      <label class="field"><span>Name</span><input class="input" data-i="name" value="${esc(item.name)}" maxlength="80" autocomplete="off"></label>
+      <label class="field"><span>Amount</span><input class="input" data-i="amount" value="${esc(item.amount || "")}" placeholder="e.g. 150 g" maxlength="40" autocomplete="off"></label>
+      <div class="item-macros">
+        ${macros
+          .map(
+            (f) => `<label class="field"><span>${label[f]}</span><input class="input" data-i="${f}" type="number" inputmode="decimal" value="${f === "calories" ? round(item[f]) : round1(item[f])}"></label>`
+          )
+          .join("")}
+      </div>
+      <div class="btn-row">
+        <button class="btn light" data-remove>Remove</button>
+        <button class="btn" data-save-item>Save</button>
+      </div>`,
+    onMount(sheet, close) {
+      const input = (k) => $(`[data-i="${k}"]`, sheet);
+      // Changing the amount rescales the numbers, from whatever they were when the amount was last set.
+      let from = { amount: parseAmount(item.amount), values: Object.fromEntries(macros.map((f) => [f, item[f]])) };
+      const rebase = () => (from = { amount: parseAmount(input("amount").value), values: Object.fromEntries(macros.map((f) => [f, num(input(f).value)])) });
+      input("amount").addEventListener("input", () => {
+        const to = parseAmount(input("amount").value);
+        if (!from.amount || !to || to[1] !== from.amount[1]) return;
+        const k = to[0] / from.amount[0];
+        for (const f of macros) input(f).value = f === "calories" ? round(from.values[f] * k) : round1(from.values[f] * k);
+      });
+      for (const f of macros) input(f).addEventListener("change", rebase);
+      $("[data-save-item]", sheet).addEventListener("click", () => {
+        close();
+        onSave({
+          name: input("name").value.trim() || item.name,
+          amount: input("amount").value.trim(),
+          ...Object.fromEntries(macros.map((f) => [f, Math.max(0, num(input(f).value))])),
+        });
+      });
+      $("[data-remove]", sheet).addEventListener("click", () => {
+        close();
+        onRemove();
       });
     },
   });

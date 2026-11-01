@@ -189,7 +189,8 @@ function tickPending() {
     const id = el.closest(".swipe")?.dataset.id;
     const e = state.entries.find((x) => x.id === id);
     if (!e?.startedAt) continue;
-    const pct = Math.min(96, Math.round(100 * (1 - Math.exp(-(Date.now() - e.startedAt) / 7000))));
+    // Most answers land in 2–4 s; menu look-ups take 10–20 s, so the ring keeps creeping instead of stalling.
+    const pct = Math.round(96 * (1 - Math.exp(-(Date.now() - e.startedAt) / 3500)));
     const arc = $(".arc", el);
     const C = parseFloat(arc.getAttribute("stroke-dasharray"));
     arc.setAttribute("stroke-dashoffset", String(C * (1 - pct / 100)));

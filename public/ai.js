@@ -4,7 +4,7 @@ import { FUNCTION_URL } from "./config.js";
 
 export class AIError extends Error {}
 
-async function call(accessCode, body) {
+async function call(accessCode, body, retry = true) {
   if (!accessCode) throw new AIError("Enter your access code in Settings to analyze food.");
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 170_000);
@@ -20,6 +20,11 @@ async function call(accessCode, body) {
     throw new AIError(err.name === "AbortError" ? "That took too long. Please retry." : "No connection. Check your internet and retry.");
   } finally {
     clearTimeout(timer);
+  }
+  // 503 means the server function failed to start (it happens briefly after an update): try once more.
+  if (res.status === 503 && retry) {
+    await new Promise((r) => setTimeout(r, 1200));
+    return call(accessCode, body, false);
   }
   let data = null;
   try {
