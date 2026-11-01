@@ -1,6 +1,6 @@
 // Offline support: app shell is served from cache and refreshed in the background.
 const CHANNEL = "lean-beta"; // "lean-beta" in the beta build
-const CACHE = `${CHANNEL}-v12`;
+const CACHE = `${CHANNEL}-v13`;
 const MEDIA = `${CHANNEL}-media-v1`;
 const OWN = new RegExp(`^${CHANNEL}-(v\\d+|media-v\\d+)$`);
 const SHELL = [
@@ -26,6 +26,7 @@ const SHELL = [
   "training.js",
   "demo.js",
   "theme.js",
+  "celebrate.js",
   "squats.js",
   "exercise-data.js",
   "data/exercises.json",
