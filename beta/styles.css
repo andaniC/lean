@@ -2103,16 +2103,59 @@ input[type="number"]::-webkit-inner-spin-button {
   font-weight: 600;
 }
 
+.items-hint {
+  margin: -4px 0 8px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
   border-radius: 16px;
   background: var(--card);
   font-size: 14px;
   font-weight: 500;
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 6px 12px 16px;
+  border-radius: 16px 0 0 16px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.item-main:active {
+  background: var(--card-press);
+}
+
+.item-del {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: 0 8px 0 4px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.item-del:active {
+  background: var(--card-press);
+}
+
+.item-macros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
 }
 
 .item + .item {
@@ -3041,6 +3084,7 @@ input[type="number"]::-webkit-inner-spin-button {
   left: 50%;
   bottom: calc(var(--safe-bottom) + 92px);
   z-index: 90;
+  width: max-content; /* centred with left: 50%, it would otherwise wrap at half the screen */
   max-width: calc(100% - 40px);
   padding: 12px 18px;
   border-radius: 18px;
