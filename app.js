@@ -22,6 +22,7 @@ import { renderProgress } from "./progress.js";
 import { renderWorkouts, wireWorkouts } from "./workouts.js";
 import { initSquatCounter } from "./squats.js";
 import { setTheme } from "./theme.js";
+import { watchGoals } from "./celebrate.js";
 import { dateOf, todayKey, addDays, mondayOf, keyOf, round, esc, clamp, haptic, mealFor, MEAL_LABEL, clock } from "./util.js";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -188,7 +189,8 @@ function tickPending() {
     const id = el.closest(".swipe")?.dataset.id;
     const e = state.entries.find((x) => x.id === id);
     if (!e?.startedAt) continue;
-    const pct = Math.min(96, Math.round(100 * (1 - Math.exp(-(Date.now() - e.startedAt) / 7000))));
+    // Most answers land in 2–4 s; menu look-ups take 10–20 s, so the ring keeps creeping instead of stalling.
+    const pct = Math.round(96 * (1 - Math.exp(-(Date.now() - e.startedAt) / 3500)));
     const arc = $(".arc", el);
     const C = parseFloat(arc.getAttribute("stroke-dasharray"));
     arc.setAttribute("stroke-dashoffset", String(C * (1 - pct / 100)));
@@ -564,6 +566,7 @@ async function boot() {
   wire();
   onChange(render);
   await loadAll();
+  watchGoals();
   // A shared link like https://…/#code=lean-xxxx pre-fills the access code.
   const code = codeFromUrl();
   if (code) {
